@@ -1,3 +1,4 @@
+// user model utils arrays
 export const gender = ["Male", "Female"];
 
 export const category = [
@@ -51,3 +52,9 @@ export const districts = [
   "Udalguri",
   "West Karbi Anglong",
 ];
+
+// exam model utils arrays
+export const difficultyLevel = ["Easy", "Medium", "Hard"];
+export const examCategory = ["Test Series", "Screening Test", "Other"];
+export const tags = ["Test Series", "Screening Test", "Other"];
+export const negativeMarkingValue = [0, 2.5, 0.5];

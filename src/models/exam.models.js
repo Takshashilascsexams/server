@@ -1,5 +1,12 @@
 import mongoose from "mongoose";
 
+import {
+  difficultyLevel,
+  examCategory,
+  tags,
+  negativeMarkingValue,
+} from "../utils/arrays.js";
+
 const ExamSchema = new mongoose.Schema(
   {
     isActive: {
@@ -9,7 +16,7 @@ const ExamSchema = new mongoose.Schema(
     title: {
       type: String,
       required: [true, "Each exam must have a title"],
-      min: [6, "Tittle must not be at least 6 characters"],
+      min: [6, "Tittle must be at least 6 characters"],
       max: [100, "Exam title must have less than 100 characters"],
     },
     description: {
@@ -21,7 +28,7 @@ const ExamSchema = new mongoose.Schema(
     duration: {
       type: Number,
       required: [true, "Each exam must have a duration"],
-      min: [30, "Exam should not be less than 30 mins"],
+      min: [30, "Exam duration should not be less than 30 mins"],
     },
     totalQuestions: {
       type: Number,
@@ -39,7 +46,7 @@ const ExamSchema = new mongoose.Schema(
     },
     negativeMarkingValue: {
       type: Number,
-      enum: [0, 2.5, 0.5],
+      enum: negativeMarkingValue,
       default: 0,
     },
     passMarkPercentage: {
@@ -51,15 +58,15 @@ const ExamSchema = new mongoose.Schema(
     },
     difficultyLevel: {
       type: String,
-      enum: ["Easy", "Medium", "Hard"],
+      enum: difficultyLevel,
       default: "Easy",
     },
     category: {
       type: String,
-      enum: ["Test Series", "Screening Test", "Other"],
+      enum: examCategory,
       default: "Screening Test",
     },
-    tags: ["Test Series", "Screening Test", "Other"],
+    tags: tags,
     allowNavigation: {
       type: Boolean,
       default: false,

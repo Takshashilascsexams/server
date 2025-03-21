@@ -1,4 +1,3 @@
-// models/testSeriesAnalyticsModel.js
 import mongoose from "mongoose";
 
 const ExamAnalyticsSchema = new mongoose.Schema(
@@ -50,9 +49,6 @@ const ExamAnalyticsSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
-
-// Index for faster queries
-ExamAnalyticsSchema.index({ examId: 1 });
 
 const ExamAnalytics = mongoose.model("ExamAnalytics", ExamAnalyticsSchema);
 
