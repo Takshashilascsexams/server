@@ -1,5 +1,5 @@
+// libraries
 import * as dotenv from "dotenv";
-import { env } from "process";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -8,11 +8,14 @@ import mongoSanitize from "express-mongo-sanitize";
 import xss from "xss-clean";
 import rateLimit from "express-rate-limit";
 import hpp from "hpp";
-import { clerkMiddleware } from "@clerk/express";
+
+// middlewares utilities functions
+import compressResponse from "./utils/compressResponse.js";
 import { AppError, errorController } from "./utils/errorHandler.js";
 
 // routes
 import examRoute from "./routes/exam.routes.js";
+import questionsRoute from "./routes/question.routes.js";
 
 dotenv.config();
 
@@ -26,6 +29,9 @@ process.on("uncaughtException", (err) => {
 const app = express();
 
 // 1) GLOBAL MIDDLEWARES
+// Response compression middleware
+app.use(compressResponse);
+
 // Set security HTTP headers
 app.use(helmet());
 
@@ -43,8 +49,8 @@ const limiter = rateLimit({
 app.use("/api", limiter);
 
 // Body parser, reading data from body into req.body
-app.use(express.json({ limit: "10kb" }));
-app.use(express.urlencoded({ extended: true, limit: "10kb" }));
+app.use(express.json({ limit: "5mb" }));
+app.use(express.urlencoded({ extended: true, limit: "5mb" }));
 app.use(express.static("./public"));
 
 // Data sanitization against NoSQL query injection
@@ -61,16 +67,14 @@ app.use(
 );
 
 const corsOptions = {
-  origin: env.CLIENT,
+  // origin: env.CLIENT,
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 };
 
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
-
-// Apply Clerk middleware globally
-app.use(clerkMiddleware());
 
 // 2) ROUTES
 // Public route
@@ -80,6 +84,7 @@ app.get("/", (req, res) => {
 
 // API routes
 app.use("/api/v1/exam", examRoute);
+app.use("/api/v1/questions", questionsRoute);
 
 // Handle undefined routes
 app.all("*", (req, res, next) => {

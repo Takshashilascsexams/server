@@ -1,42 +1,35 @@
-// middleware/authMiddleware.js
-import User from "../models/user.models.js";
-import { AppError, catchAsync } from "../utils/errorHandler.js";
+import verifyToken from "../lib/verifyToken.js";
 
-// Middleware to validate admin role
-export const validateAdminRole = catchAsync(async (req, res, next) => {
-  // 1. Extract user from Clerk auth (Clerk middleware already verified the token)
-  const { userId } = req.auth;
+// Middleware to verify if a user is authenticated
+const verifyUserIsSignedIn = (req, res, next) => {
+  try {
+    const decodedToken = verifyToken(req, res);
 
-  if (!userId) {
-    return next(
-      new AppError("You are not logged in. Please log in to get access.", 401)
-    );
+    req.user = decodedToken;
+    next();
+  } catch (error) {
+    console.error("JWT verification error:", error);
+    return res.status(401).json({ message: "Invalid or expired token" });
   }
+};
 
-  // 2. Check if user has admin role in Clerk (from token)
-  const clerkUser = req.auth;
-  const isClerkAdmin = clerkUser.sessionClaims?.metadata?.role === "admin";
+// Middleware to verify if a user is an admin
+const verifyUserIsAdmin = (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "User is not authenticated" });
+    }
 
-  if (!isClerkAdmin) {
-    return next(
-      new AppError("You do not have permission to perform this action", 403)
-    );
+    // Check if the user has admin role in metadata (using "Admin" as you specified)
+    if (req.user.metadata && req.user.metadata.role === "Admin") {
+      next();
+    } else {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+  } catch (error) {
+    console.error("Admin role verification error:", error);
+    return res.status(401).json({ message: "User is not admin" });
   }
+};
 
-  // 3. Double-check with MongoDB database
-  const user = await User.findOne({ clerkId: userId });
-
-  if (!user) {
-    return next(new AppError("User not found in database", 404));
-  }
-
-  if (user.role !== "admin") {
-    return next(
-      new AppError("You do not have permission to perform this action", 403)
-    );
-  }
-
-  // Add user to request for later use
-  req.user = user;
-  next();
-});
+export { verifyUserIsSignedIn, verifyUserIsAdmin };
