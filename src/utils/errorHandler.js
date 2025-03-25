@@ -1,3 +1,5 @@
+import multer from "multer";
+
 export class AppError extends Error {
   constructor(message, statusCode) {
     super(message);
@@ -16,6 +18,16 @@ export const catchAsync = (fn) => {
 };
 
 export const errorController = (err, req, res, next) => {
+  // Multer error handler
+  if (err instanceof multer.MulterError) {
+    // A Multer error occurred during file upload
+    return res.status(400).json({
+      status: "fail",
+      message: `Upload error: ${err.message}`,
+      code: err.code,
+    });
+  }
+
   err.statusCode = err.statusCode || 500;
   err.status = err.status || "error";
 
