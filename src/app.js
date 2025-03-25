@@ -8,6 +8,8 @@ import mongoSanitize from "express-mongo-sanitize";
 import xss from "xss-clean";
 import rateLimit from "express-rate-limit";
 import hpp from "hpp";
+import path from "path";
+import fs from "fs";
 
 // middlewares utilities functions
 import compressResponse from "./utils/compressResponse.js";
@@ -19,9 +21,22 @@ import questionsRoute from "./routes/question.routes.js";
 
 dotenv.config();
 
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 // Uncaught exception handler
 process.on("uncaughtException", (err) => {
   console.log("UNCAUGHT EXCEPTION! 💥 Shutting down...");
+  console.log(err.name, err.message);
+  process.exit(1);
+});
+
+// Unhandled promise rejection handler
+process.on("unhandledRejection", (err) => {
+  console.log("UNHANDLED REJECTION! 💥 Shutting down...");
   console.log(err.name, err.message);
   process.exit(1);
 });
@@ -36,9 +51,7 @@ app.use(compressResponse);
 app.use(helmet());
 
 // Development logging
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
-}
+app.use(morgan("tiny"));
 
 // Limit requests from same IP
 const limiter = rateLimit({
@@ -49,8 +62,8 @@ const limiter = rateLimit({
 app.use("/api", limiter);
 
 // Body parser, reading data from body into req.body
-app.use(express.json({ limit: "5mb" }));
-app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(express.static("./public"));
 
 // Data sanitization against NoSQL query injection
@@ -66,9 +79,16 @@ app.use(
   })
 );
 
+// Add the keep-alive middleware here
+app.use((req, res, next) => {
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("Keep-Alive", "timeout=60, max=100"); // keep alive for 60secs and max request is 100
+  next();
+});
+
 const corsOptions = {
   // origin: env.CLIENT,
-  origin: "*",
+  origin: process.env.CLIENT || "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
 };
@@ -78,6 +98,16 @@ app.options("*", cors(corsOptions));
 
 // 2) ROUTES
 // Public route
+// Health check route
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "Server is healthy",
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 app.get("/", (req, res) => {
   res.send("Exam Portal API is running");
 });

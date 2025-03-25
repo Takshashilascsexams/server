@@ -1,0 +1,1178 @@
+[
+  {
+    "questionNumber": 1,
+    "questionText": "With reference to Securities and Exchange Board of India (SEBI) consider the following statements:",
+    "statements": [
+      "It was first established in 1988 as a non-statutory body for regulating the securities market.",
+      "It became an autonomous body on 30 January 1992 and was accorded statutory powers with the passing of the SEBI Act, 1992 by the Parliament of India.",
+      "It protects the interest of investors in securities and promote and regulate the securities market and for matters connected therewith or incidental thereto."
+    ],
+    "statementInstructions": "Which of the statements given above is / are incorrect?",
+    "options": ["1 only", "2 only", "3 only", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 2,
+    "questionText": "Which of the following pairs is/are matched incorrectly?",
+    "statements": [
+      "Corporatocracy : It is an economic, political and judicial system controlled or influenced by business corporations or corporate interests.",
+      "Plutocracy : It is a society that is ruled or controlled by people of great wealth or income.",
+      "Kleptocracy : It is a government whose corrupt leaders use political power to expropriate the wealth of the people and land they govern."
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["1 only", "2 only", "3 only", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 3,
+    "questionText": "\"The main objective of competition law is to promote economic efficiency using competition as one of the means of assisting the creation of market responsive to consumer preferences\". Which of the following is / are an objective of Competition Act of 2002?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Make the markets work for the benefit and welfare of consumers.",
+      "Ensure fair and healthy competition in economic activities in the country for faster and inclusive growth and development of the economy.",
+      "Implement competition policies with an aim to effectuate the most efficient utilization of economic resources.",
+      "All of these"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 4,
+    "questionText": "Consider the following statements regarding Reserve Bank of India (RBI):",
+    "statements": [
+      "RBI was set up based on the recommendations of the Royal Commission on Indian Currency and Finance (1926), also known as the Hilton Young Commission.",
+      "RBI was established on April 1, 1935 in accordance with the provisions of the Reserve Bank of India Act, 1934.",
+      "RBI was nationalised in 1949 and since then fully owned by the Ministry of Finance under Government of India.",
+      "In 2016, the Government of India amended the RBI Act to establish the Monetary Policy Committee."
+    ],
+    "statementInstructions": "How many of the above statements is/are correct?",
+    "options": ["Only one", "Only two", "Only three", "All four"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 5,
+    "questionText": "North Atlantic Treaty Organization (NATO) has been a very important military alliance since its formation in 1949. In light of recent geopolitical tensions, particularly following Russia's invasion of Ukraine, discussions around defence spending among member states have intensified. Who among the following is the newest member of NATO?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Sweden", "Belgium", "Turkey", "United Kingdom"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 6,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "North Eastern Council (NEC) is a statutory advisory body constituted under the North Eastern Council Act 1971 and came into being on 8 August 1972.",
+      "The eight States of Northeast India are members of the council, with their respective Chief Ministers and Governors representing them.",
+      "The headquarters of the council is situated in Shillong and functions under the Ministry of Development of North Eastern Region (DONER) of the Government of India."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 2 only", "1 & 3 only", "1 only", "1, 2 & 3"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 7,
+    "questionText": "With reference to Banking Ombudsmen consider the following statements:",
+    "statements": [
+      "It is a quasi-judicial authority formed with the aim to address and resolve complaints of the Bank's customers.",
+      "Section 35A of the Banking Regulation Act, 1949 deals with Banking Ombudsman Scheme that came into effect in 1995 and presently the Banking Ombudsman Scheme 2006 is in operation."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 8,
+    "questionText": "Consider the following statements about India:",
+    "statements": [
+      "India is the seventh-largest country in the world.",
+      "It has a land frontier of 15,200 km and a coastline of 7,516 km.",
+      "India's territorial waters extend into the sea to a distance of 12 nautical miles from the coast baseline.",
+      "The Ganges is the longest river originating in India after Brahmaputra."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1, 2 & 3 only", "1 & 4 only", "1, 3 & 4 only", "1, 2, 3 & 4"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 9,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Cyril Radcliffe was the chairman of the Border Commission for India and Pakistan, announced by Lord Mountbatten in 1947.",
+      "Radcliffe Line published on 17th August 1947, was the boundary demarcation line between the India and Pakistan's portion of the Punjab and Bengal provinces of British India."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 10,
+    "questionText": "With reference to Census of India consider the following statements:",
+    "statements": [
+      "The first official population census of India was conducted in 1872.",
+      "Since 1949, it has been conducted by the Registrar General and Census Commissioner of India under the Ministry of Home Affairs.",
+      "The slogan of Census 2011 is \"Our Census, Our Future\"."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 3 only", "2 & 3 only", "3 only", "1, 2 & 3"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 11,
+    "questionText": "Which of the following pairs is / are incorrectly matched?",
+    "statements": [
+      "Swat Valley : Pakistan",
+      "Sinai Peninsula : Egypt",
+      "Anatolia : Turkey"
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["1 only", "2 only", "3 only", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 12,
+    "questionText": "Consider the following statements about Mughal Dynasty:",
+    "statements": [
+      "They belonged to a branch of the Timurid dynasty.",
+      "This dynasty was founded in 1526 by Babur, a chieftain from what is today Uzbekistan.",
+      "Babur's forces defeated Ibrahim Lodi, Sultan of Delhi, in the First Battle of Panipat."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["2 & 3 only", "1 & 2 only", "3 only", "1, 2 & 3"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 13,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "In 1919, the Rowlatt Act gave extensive powers to the British government and allowed indefinite arrest and detention of individuals, warrantless searches and seizures, restrictions on public gatherings, and intensive censorship of media and publications.",
+      "Defence of India Act 1915 was an emergency criminal law enacted by the Governor-General of India in 1915 with the intention of curtailing the nationalist and revolutionary activities during and in the aftermath of the First World War."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 & 2"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 14,
+    "questionText": "The term \"Interim Budget\" is used when _________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "A new government is formed",
+      "The government is facing financial constraints",
+      "A budget is presented during an election year",
+      "The budget is presented for a short period before a new fiscal year"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 15,
+    "questionText": "The Foreign exchange reserve of India is managed by _______________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Reserve Bank of India (RBI)",
+      "Government of India",
+      "Jointly by RBI and Scheduled commercial banks",
+      "Jointly by RBI and IMF"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 16,
+    "questionText": "The term 'Protectionism' is often seen in the news. What does it mean?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Imposing trade restrictions to protect domestic industry",
+      "Entering into alliances with foreign militaries to safeguard one's borders",
+      "Mandating military conscription for better defence capabilities",
+      "Protecting one's citizens from influence of foreign cultures"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 17,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Dadabhai Naoroji was the first Indian to become a member of British parliament",
+      "He was the exponent of the theory of economic drain of India during British rule",
+      "He authored the book 'Poverty and Un-british rule in India'"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 2 only", "1 & 3 only", "2 & 3 only", "1, 2 & 3"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 18,
+    "questionText": "\"Imperialism and militarism are the twin children of capitalism\". Who made this statement and was also the first person to link capitalism with imperialism?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Lala Lajpat Rai", "C.R. Das", "S.C. Bose", "Dewan Chaman Lal"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 19,
+    "questionText": "Jawahar tunnel is located in which pass?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Banihal pass", "Changla pass", "Zoji la", "Baralacha pass"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 20,
+    "questionText": "The term 'Crony capitalism' is often seen in the news, refers to?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Displacement of socialism with model of capitalism",
+      "Adverse effects of capitalism on sustainability of growth process",
+      "Mutually advantageous relationships between business leaders and government officials",
+      "Greater importance of the money sector vis-à-vis the real sector"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 21,
+    "questionText": "The National Calendar based on the Saka Era, with Chaitra as its first month and a normal year of 365 days was adopted from ______________ along with the Gregorian calendar for the following official purposes: (i) Gazette of India, (ii) news broadcast by All India Radio, (iii) calendars issued by the Government of India and (iv) Government communications addressed to the public?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "March 22, 1956",
+      "March 22, 1957",
+      "March 22, 1958",
+      "March 22, 1959"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 22,
+    "questionText": "Which of the following statements is / are incorrect?",
+    "statements": [
+      "Ali-Ai-Ligang a spring festivity associated with agriculture celebrated by the Mising people of Assam.",
+      "Me dam me phi is a socio-traditional festival celebrated by the Tai-Ahom people of Assam.",
+      "Kherai is the greatest religious festival of Dimasas."
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["1 & 3 only", "3 only", "1 & 2 only", "1, 2 & 3"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 23,
+    "questionText": "The 18th edition of the Pravasi Bharatiya Divas will take place in Bhubaneswar from January 8 to 10, 2025. The event aims to strengthen ties with the Indian diaspora and celebrate their contributions to the nation's development. Which of the following statements is / are correct?",
+    "statements": [
+      "Pravasi Bharatiya Divas is celebrated annually on January 9. This date marks Mahatma Gandhi's return to India from South Africa in 1915.",
+      "This year's theme is \"Diaspora's Contribution to a Viksit Bharat.\""
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 24,
+    "questionText": "Which of the following greenhouse gases have the highest atmospheric lifetime in years?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Methane",
+      "Nitrous Oxide",
+      "Hydrofluorocarbons",
+      "Chlorofluorocarbons"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 25,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Amount of water vapour decreases from equator to pole wards.",
+      "Water vapour absorbs some portion of the heat emitted from the Sun and stores the heat coming out of the Earth.",
+      "Water vapour acts like a blanket and does not allow the Earth to get too hot nor too cold."
+    ],
+    "statementInstructions": "How many of the statements given above are correct?",
+    "options": ["Only one", "Only two", "All three", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 26,
+    "questionText": "Why is the Prime Minister in India not directly elected by the people? Choose the most appropriate answer and give reasons for your choice:",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "In a Parliamentary democracy only the leader of the majority party in the Lok Sabha can become the Prime Minister.",
+      "Lok Sabha can remove the Prime Minister and the Council of Ministers even before the expiry of their term.",
+      "Since the Prime Minister is appointed by the President there is no need for it.",
+      "Direct election of the Prime Minister will involve lot of expenditure on election."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 27,
+    "questionText": "Any such transaction, in which property is transferred in the name of one person and payment is made by another person, is called __________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Hawala",
+      "Benami transaction",
+      "Money laundering",
+      "Black money"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 28,
+    "questionText": "The \"Chipko Movement\" in India is known for:",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Advocating for the rights of forest-dwelling tribal communities",
+      "Promoting the commercialization of forest resources",
+      "Encouraging the construction of large-scale dams in forested areas",
+      "Opposing deforestation and environmental degradation"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 29,
+    "questionText": "Which of the following leaders signed the Tashkent Agreement?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Vallabhbhai Patel and Jinnah",
+      "Jawaharlal Nehru and Ayub Khan",
+      "Lal Bahadur Shastri and Ayub Khan",
+      "Jawaharlal Nehru and Jinnah"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 30,
+    "questionText": "Which one of the following is not basic elements of the citizen charter?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Description of services being provided by department or the agency.",
+      "Promotion of various methods to get benefit from the services available.",
+      "To expect any public record.",
+      "Provision for the inspection of the agency's work."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 31,
+    "questionText": "Which one of the following is not basic elements of the citizen charter?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Description of services being provided by department or the agency.",
+      "Promotion of various methods to get benefit from the services available.",
+      "To expect any public record.",
+      "Provision for the inspection of the agency's work."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 32,
+    "questionText": "The Union Council of Ministers is the principal executive organ of the Government of India, which serves to aid and advice the President of India in execution of their functions. It is chaired by the Prime Minister of India and consists of the heads of each of the executive government ministries. Currently, who is the Finance Minister of India?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Amit Shah",
+      "Rajnath Singh",
+      "Nirmala Sitaraman",
+      "Nitin Gadkari"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 33,
+    "questionText": "Consider the following pairs:",
+    "statements": [
+      "Jainism : Mahavira",
+      "Buddhism : Gautam Buddha",
+      "Ajivikas : Makhali Gosala"
+    ],
+    "statementInstructions": "Select the incorrectly matched pairs using the codes given below:",
+    "options": ["1 only", "2 & 3 only", "1 & 3 only", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 34,
+    "questionText": "On 25 April 1945, 50 nations assembled in San Francisco, California, for a conference and initialized the drafting of the UN Charter, which was adopted on 25 June 1945. The charter took effect on 24 October 1945, when the United Nation (UN) began operations. The UN is the successor of which organisation?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "League against Imperialism",
+      "League of Nation",
+      "International Court of Justice",
+      "Court of Arbitration"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 35,
+    "questionText": "__________________, a prince of the Mao-Shan subtribe left Mong Mao in 1215. He was accompanied by three queens, two sons and a daughter; chiefs from five other dependent Mongs; members of the priestly class and soldiers—a total contingent of 9,000. He was the founder of the Ahom kingdom and the architect of Assam. The kingdom he established in 1228 existed for nearly six hundred years and in the process unified the various ethnic groups of the region that left a deep impact on the region?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Chaolung Sukaphaa",
+      "Suhungmung",
+      "Susenghphaa",
+      "Sukhrungphaa"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 36,
+    "questionText": "'Singarigharutha' was the traditional coronation ceremony of which kingdom of medieval Assam?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Kachari Kingdom", "Ahom Kingdom", "Chutia Kingdom", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 37,
+    "questionText": "Consider the following statements about Zero FIR:",
+    "statements": [
+      "Zero FIR was introduced after the recommendation of the Justice Verma Committee, which was set up after the 2012 Nirbhaya gangrape case.",
+      "It is an FIR that is registered irrespective of the area where the offence is committed and the police can no longer claim that they have no jurisdiction over the case."
+    ],
+    "statementInstructions": "Which of the above statement is/are incorrect?",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 38,
+    "questionText": "Allelopathy is need to describe which of the following?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "The generation of toxins by one species which inhibits the development of another.",
+      "The pathogen's sporulation is inhibited by the host.",
+      "Changing the reproductive cycle of one organism by changing the reproductive cycle of another.",
+      "By suppressing the reproduction, one species might stifle the expansion of another."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 39,
+    "questionText": "If a tropical rain forest is removed, it does not regenerate quickly as compared to a tropical deciduous forest. This is because",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "exotic species invade the fertile soil of rain forest.",
+      "the rain forest species are slow-growing.",
+      "propagules of the trees in a rain forest have poor viability.",
+      "the soil of rain forest is deficient in nutrients."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 40,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Sikkim shares international boundaries with Bhutan, China, and Nepal.",
+      "Arunachal Pradesh, Nagaland, Manipur, and Mizoram share an international boundary with Myanmar."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 41,
+    "questionText": "The 'Statue of Unity' is located on the Narmada river-facing ________________ in Kevadiya colony, Narmada District in the Indian State of Gujarat?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Sardar Sarovar Dam",
+      "Hirakud Dam",
+      "Gandhi Sagar Dam",
+      "Tehri Dam"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 42,
+    "questionText": "Recently, the Chief Miniter of Assam announced that _____________ will become the state's second capital within three years along with a permanent assembly building?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Jorhat", "Dibrugarh", "Sibsagar", "Tezpur"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 43,
+    "questionText": "With reference to Insurance Regulatory and Development Authority of India (IRDAI) consider the following statements:",
+    "statements": [
+      "The head office of the IRDAI is situated in Hyderabad.",
+      "It was constituted by the recommendations of the Malhotra Committee report, in 1999.",
+      "It is an autonomous body and was incorporated as a statutory body in April 2000."
+    ],
+    "statementInstructions": "Which of the above statements is/are correct?",
+    "options": ["1 & 2 only", "2 & 3 only", "1 & 3 only", "All of the above"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 44,
+    "questionText": "The role of the Finance Commission is to ________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "recommend the formula for sharing revenue between the Centre and the States",
+      "grant revenue to the States",
+      "allocate funds for different heads of the Centre and the States",
+      "collection of different taxes including GST"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 45,
+    "questionText": "Which of the following is not a southern tributary of the Brahmaputra?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Dikhow", "Borgang", "Bhogdoi", "Krishnai"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 46,
+    "questionText": "'Thang ta', a martial art form is associated with which state of India?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Mizoram", "Nagaland", "Manipur", "Tripura"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 47,
+    "questionText": "In spite of being a non-member, who among the following can participate in the proceedings of either House of Parliament, without having the right to vote?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Vice President",
+      "Chief Justice of India",
+      "Attorney General of India",
+      "Comptroller and Auditor General of India"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 48,
+    "questionText": "With reference to Central Bureau of Investigation (CBI) consider the following:",
+    "statements": [
+      "It was recommended by the Santhanam Committee on the prevention of corruption",
+      "It was established in 1963 by a resolution made by the Ministry of Home Affairs.",
+      "It attributes its powers to the Delhi Special Police Establishment Act of 1946.",
+      "It provides assistance to the Central Vigilance Commission and Lokpal."
+    ],
+    "statementInstructions": "How many of the above statements is/are correct?",
+    "options": ["Only one", "Only two", "Only three", "All four"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 49,
+    "questionText": "Which is the role of the International Monetary Fund (IMF)?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "To implement and advance global trade agreements",
+      "To settle industrial and trade disputes between members",
+      "To help poorer countries with their economic development",
+      "To maintain international financial stability in global financial markets"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 50,
+    "questionText": "Which of the following statements appropriately describes the \"fiscal stimulus\"?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "It is a massive investment by the Government of the manufacturing sector to ensure the supply of goods to meet the demand surge caused by rapid economic growth.",
+      "It is an intense affirmative action of the Government to boost economic activity in the country.",
+      "It is the Government's action of financial institutions to ensure the disbursement of loans to agriculture and allied sectors to promote greater food production and contain food inflation.",
+      "It is an extreme affirmative action by the Government to pursue its policy of financial inclusion."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 51,
+    "questionText": "With reference to Treaty of Yandabo consider the following statements:",
+    "statements": [
+      "The treaty was signed on 24 February 1826 that ended the First Anglo-Burmese War.",
+      "It was signed by Gen. Campbell from the British side and Governor of Legaing Maha Min Hla Kyaw Htin from the Burmese side.",
+      "Burmese King Bagyidaw signed the treaty with the British with payment of an indemnity equivalent to £1,000,000 and renunciation of all Burmese claims in Assam and Manipur, which became British protectorates."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 3 only", "1 & 2 only", "1 only", "1, 2 & 3"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 52,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Bhupen Hazarika Bridge connects the village of Dhola in the south to the village of Sadiya to the north, both in Tinsukia district of Assam.",
+      "Bogibeel Bridge between Dhemaji district and Dibrugarh district, is the longest rail-cum-road bridge in India."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 53,
+    "questionText": "Which gas is responsible for depletion of ozone layer?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Carbon dioxide",
+      "Carbon monoxide",
+      "Nitrous oxide",
+      "Chlorofluorocarbons"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 54,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "On 8 April 1929, Bhagat Singh and Batukeshwar Dutt threw two bombs into the Assembly chamber from its public gallery while it was in session.",
+      "Bhagat Singh, Rajguru and Sukhdev were sentenced to death in the Lahore conspiracy case and were hanged on 23 March 1931."
+    ],
+    "statementInstructions": "Which of the statements given above is / are incorrect?",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 55,
+    "questionText": "The word \"Green Revolution\" was in 1968 coined by?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "William S. Gaud",
+      "Norman Borlaug",
+      "Indira Gandhi",
+      "MS Swaminathan"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 56,
+    "questionText": "With reference to River Brahmaputra consider the following statements:",
+    "statements": [
+      "It originates from Chemayungdung glacier of the Kailash range near the Mansarovar lake.",
+      "It takes a U-turn on reaching Namcha Barwa.",
+      "In Tibet it is known as the Tsangpo, which means 'the purifier.'"
+    ],
+    "statementInstructions": "Which of the statements given above is /are incorrect?",
+    "options": ["1 only", "2 only", "3 only", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 57,
+    "questionText": "Which of these country does not share an international boundary with Russia?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Norway", "Sweden", "Finland", "Poland"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 58,
+    "questionText": "Which leader is popularly known as 'Deenbandhu'?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["C.R. Das", "C.F. Andrews", "G.K. Gokhale", "None of these"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 59,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "India is a federal union comprising 28 states and 8 union territories.",
+      "All states, as well as the union territories of Jammu and Kashmir, Puducherry and the National Capital Territory of Delhi, have elected legislatures and governments following the Westminster system of governance.",
+      "In 1956, under the States Reorganisation Act, states were reorganised on a linguistic basis."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 2 only", "2 & 3 only", "1 only", "1, 2 & 3"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 60,
+    "questionText": "The design of the National Flag was adopted by the Constituent Assembly of India on __________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "July 22, 1946.",
+      "July 22, 1947.",
+      "July 22, 1948.",
+      "July 22, 1950."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 61,
+    "questionText": "Which of the following best distinguishes \"Adjournment Sine Die\" from \"Prorogation\"?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Adjournment sine die is decided by the President, while prorogation is decided by the Speaker.",
+      "Adjournment sine die refers to indefinite suspension, while prorogation marks the formal end of a Parliamentary session.",
+      "Adjournment sine die dissolves the House, while prorogation merely ends a session.",
+      "Adjournment sine die and prorogation are identical in meaning."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 62,
+    "questionText": "Which of the following is NOT a characteristic of Zaid crops in India?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "They are grown between the Rabi and Kharif seasons.",
+      "They need heavy rainfall for optimal growth.",
+      "They typically include seasonal fruits and vegetables.",
+      "They have a shorter growing season compared to Rabi and Kharif crops."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 63,
+    "questionText": "Which of the following Articles of the Constitution of India provides for separation of judiciary from executive?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Article 51", "Article 50", "Article 49", "Article 48"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 64,
+    "questionText": "Article 44 of the Indian Constitution is related to which of the following?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Fundamental Rights",
+      "Uniform Civil Code (UCC)",
+      "Rights of the Tribals",
+      "None of the above"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 65,
+    "questionText": "CRISIL is often seen in the news, it is a:",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "An international NGO focussed on disaster management",
+      "Credit rating agency headquartered in India",
+      "A global energy finance company",
+      "Group of least developed countries (LDCs) committed to development"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 66,
+    "questionText": "Match the events in List – I with their respective years in List – II:",
+    "statements": [
+      "Simla Conference : 1) 1928",
+      "Quit India Movement : 2) 1945",
+      "Home Rule Movement : 3) 1916",
+      "Nehru Report : 4) 1942"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["2 4 3 1", "1 3 4 2", "3 4 1 2", "4 3 2 1"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 67,
+    "questionText": "The 2030 Agenda for Sustainable Development, adopted by all United Nations (UN) members in 2015, created ________ world Sustainable Development Goals (SDGs)?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["16 SDGs", "17 SDGs", "18 SDGs", "19 SDGs"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 68,
+    "questionText": "India is updating its GDP base year to _________ by February 2026 for a more accurate economic reflection?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["2004 – 05", "2011 – 12", "2022 – 23", "None of these"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 69,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Bharatiya Nyaya Sanhita (BNS) is the official criminal code in India.",
+      "It came into effect on 1 July 2024 after being passed by the parliament in December 2023",
+      "It will replace the Indian Penal Code (IPC)."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 3 only", "2 & 3 only", "3 only", "1, 2 & 3"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 70,
+    "questionText": "Maha Kumbh is held every 12 years. The 2025 event starts on January 13 and ends on February 26. The Maha Kumbh Mela set to commence in _____________, Uttar Pradesh?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Prayagraj", "Varanasi", "Lucknow", "None of these"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 71,
+    "questionText": "The National Calendar based on the Saka Era, with Chaitra as its first month and a normal year of 365 days was adopted from ______________ along with the Gregorian calendar for the following official purposes: (i) Gazette of India, (ii) news broadcast by All India Radio, (iii) calendars issued by the Government of India and (iv) Government communications addressed to the public?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "March 22, 1956",
+      "March 22, 1957",
+      "March 22, 1958",
+      "March 22, 1959"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 72,
+    "questionText": "Which of the following pair / pairs are correctly matched?",
+    "statements": [
+      "Lord Curzon : Partition of Bengal",
+      "Lord Minto : Father of Separate Electorate",
+      "Lord Chelmsford : Jallianwala Bagh Massacre"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 3 only", "1 & 2 only", "2 only", "1, 2 & 3"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 73,
+    "questionText": "How many Articles are there in the 'Universal Declaration of Human Rights'?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["29 articles", "28 articles", "30 articles", "32 articles"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 74,
+    "questionText": "Consider the following pairs given below:",
+    "statements": [
+      "Vladimir Putin : Russia",
+      "Donald Trump : USA",
+      "Narendra Modi : India"
+    ],
+    "statementInstructions": "Which of the pairs given above is / are the President of their respective countries?",
+    "options": ["1 & 2 only", "2 only", "1 & 3 only", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 75,
+    "questionText": "Which of the following pairs is / are correctly matched?",
+    "statements": [
+      "GDP : It is the standard measure of the value added created through the production of goods and services in a country during a certain period.",
+      "GNP : It is the total value of all finished goods and services produced by a country's citizens in a given financial year, irrespective of their location."
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 76,
+    "questionText": "With reference to \"Advantage Assam 2.0 – Investment and Infrastructure Summit 2025\" consider the following statement:",
+    "statements": [
+      "The Investors' Summit is scheduled to be held in Guwahati on February 25-26, 2025.",
+      "The event marks the largest investment promotion and facilitation initiative by the Government of Assam, highlighting the state's geostrategic advantages and its potential as a major investment destination.",
+      "The summit will showcase Assam's manufacturing prowess and opportunities in export-oriented manufacturing and services to growing economies, particularly ASEAN and BBN countries."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1, 2 & 3", "1 only", "2 & 3 only", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 77,
+    "questionText": "In response to recommendations of National Policy on Education (1986), NAAC was established in 1994. Which of the following statements is / are correct about NAAC?",
+    "statements": [
+      "National Assessment and Accreditation Council (NAAC) is a public autonomous body of the government of India that assesses and accredits higher education institutions (HEIs) in India.",
+      "It is funded by the University Grants Commission and headquartered in Bengaluru."
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 78,
+    "questionText": "Which of the following statements about PAN 2.0 is / are correct?",
+    "statements": [
+      "It introduces QR code integration for better security.",
+      "Taxpayers must reapply for a new PAN under this system.",
+      "It aligns with the Digital India Vision by streamlining services and reducing paper usage."
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["1 & 3 only", "2 only", "1, 2 & 3", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 79,
+    "questionText": "Who is the ex-officio Chairperson of Monetary Policy Committee (MPC) which was reconstituted recently?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Finance Minister",
+      "RBI Deputy Governor",
+      "RBI Governor",
+      "Chief Economic Advisor"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 80,
+    "questionText": "The Finance Minister presented the Union Budget 2025-26 with the theme ______________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Sabka Vikas",
+      "Sabka Saath Sabka Vikas",
+      "Sabka Saath Sabka Vikas Sabka Viswas",
+      "None"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 81,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Department of Border Management",
+      "Department of Internal Security",
+      "Department of Jammu, Kashmir and Ladakh Affairs",
+      "Department of Official Language"
+    ],
+    "statementInstructions": "Which of the above departments is / are under Ministry of Home Affairs?",
+    "options": ["1, 2, 3 & 4", "1 & 2 only", "2 & 3 only", "1, 2 & 3 only"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 82,
+    "questionText": "In India, a governor is the ceremonial head of a state, appointed by the President. They have executive powers, such as appointing the chief minister, signing bills into law, and overseeing the state's administration. However, their actions are largely guided by the advice of the state cabinet. Who is the 32nd Governor of Assam?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Banwarilal Purohit",
+      "Jagdish Mukhi",
+      "Gulab Chand Kataria",
+      "Lakshman Prasad Acharya"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 83,
+    "questionText": "Which of the following is the largest employer in Assam?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Tea Industry",
+      "Oil Industry",
+      "Automobile Industry",
+      "Service Sector"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 84,
+    "questionText": "Which of the following is a significant challenge faced by Assam's economy?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "High literacy rate",
+      "Inadequate infrastructure",
+      "Abundance of natural resources",
+      "Low unemployment rate"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 85,
+    "questionText": "Assam's Gross State Domestic Product (GSDP) is heavily influenced by which of the following sectors?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Service",
+      "Industrial",
+      "Agricultural",
+      "Information Technology"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 86,
+    "questionText": "In which year did Assam become a state of the Indian Union?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["1947", "1950", "1952", "1956"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 87,
+    "questionText": "Which major social issue was the primary cause behind the signing of the Assam Accord?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Economic disparities",
+      "Religious conversion",
+      "Illegal immigration from Bangladesh",
+      "Regional language politics"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 88,
+    "questionText": "The 'Barren Island' is located in which part of India?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Andaman and Nicobar Islands",
+      "Lakshadweep",
+      "Gujarat",
+      "Tamil Nadu"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 89,
+    "questionText": "Which of the following is true about the Indian Ocean?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "It is the smallest of the world's oceans.",
+      "It is the largest in terms of water volume.",
+      "It is the only ocean surrounded by three continents.",
+      "It is the coldest of the world's oceans."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 90,
+    "questionText": "Which of the following is the primary reason for the formation of the Himalayan Mountain range?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Tectonic collision between the Indo-Australian Plate and the Eurasian Plate",
+      "Volcanic activity",
+      "Erosion of the Tethys Sea",
+      "Divergence of oceanic plates"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 91,
+    "questionText": "In the PPP theory, if the exchange rate between two countries is above the PPP rate, it implies that _____________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "The domestic currency is overvalued",
+      "The foreign currency is overvalued",
+      "Both countries' currencies are undervalued",
+      "The domestic currency is undervalued"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 92,
+    "questionText": "Which of the following best describes \"bounded rationality\" in decision-making?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "The assumption that decision makers will always make optimal choices",
+      "The limitations of human cognitive abilities that prevent making fully rational decisions",
+      "The process of making decisions based on emotion rather than logic",
+      "The idea of making decisions in a systematic and structured manner"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 93,
+    "questionText": "In a family, there are 5 members – A, B, C, D, and E. A is the father of B, and C is the brother of A. D is the sister of A, and E is the wife of B. How is C related to E?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Father", "Brother", "Son", "Father-in-law"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 94,
+    "questionText": "If \"CAT\" is coded as \"DBU\", how is \"DOG\" coded?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["EPH", "EOH", "DPH", "EOG"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 95,
+    "questionText": "What is the primary cause of climate change mentioned in the passage?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Industrialization",
+      "Natural weather cycles",
+      "Human activities like burning fossil fuels and deforestation",
+      "Overpopulation"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 96,
+    "questionText": "What is the main warning given by scientists in the passage?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Climate change can lead to economic collapse.",
+      "Climate change will cause a shortage of natural resources.",
+      "Without urgent action, irreversible damage to the planet could occur.",
+      "Climate change will result in the extinction of most species."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 97,
+    "questionText": "Which of the following actions is NOT mentioned in the passage as part of the solution to climate change?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Reducing greenhouse gas emissions",
+      "Transitioning to renewable energy",
+      "Adopting sustainable practices in various sectors",
+      "Increasing the use of fossil fuels"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 98,
+    "questionText": "What is highlighted as important for addressing the climate crisis, besides government action?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Technological advancements",
+      "The role of education and public awareness",
+      "Global financial investments",
+      "More government regulations"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 99,
+    "questionText": "According to the passage, what could happen if collective action is not taken?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Climate change would become less severe.",
+      "Future generations will face the consequences of inaction.",
+      "The economy will benefit from climate change.",
+      "Natural disasters will cease to occur."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 100,
+    "questionText": "Read the passage and answer the following question: \"I read somewhere that in ancient times the prestige of a kingdom depended upon the number of taxes that it was able to levy on its people. It was very much like the prestige of a head-hunter in his own community.\" Based on the paragraph above, the prestige of a head-hunter depended upon ___________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "the prestige of the kingdom",
+      "the prestige of the heads",
+      "the number of taxes he could levy",
+      "the number of heads he could gather"
+    ],
+    "type": "MCQ"
+  }
+]

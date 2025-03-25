@@ -214,9 +214,16 @@ const getUserId = async (clerkId) => {
 
 // Optimized controller for batch uploads
 const uploadBulkQuestions = catchAsync(async (req, res, next) => {
+  const extractedQuestions = req.extractedQuestions;
+
+  if (!extractedQuestions || extractedQuestions.length === 0) {
+    return next(
+      new AppError("No valid questions found in the uploaded batch", 400)
+    );
+  }
+
   // Extract common fields
   const {
-    questionsArray,
     examId,
     marks = 1,
     difficultyLevel = "MEDIUM",
@@ -249,14 +256,12 @@ const uploadBulkQuestions = catchAsync(async (req, res, next) => {
 
   try {
     // Prepare questions with common fields
-    const questionsToInsert = questionsArray.map((q) => ({
+    const questionsToInsert = extractedQuestions.map((q) => ({
       examId,
       questionText: q.questionText,
       marks: parseInt(marks, 10),
-      type: q.type === "STATEMENT_TYPE" ? "STATEMENT_BASED" : q.type,
-      options: q.options.map((option) => ({
-        optionText: option,
-      })),
+      type: q.type,
+      options: q.options,
       difficultyLevel: difficultyLevel.toUpperCase(),
       subject,
       hasNegativeMarking:
@@ -268,10 +273,7 @@ const uploadBulkQuestions = catchAsync(async (req, res, next) => {
       // Add statements if present
       ...(q.statements && q.statements.length > 0
         ? {
-            statements: q.statements.map((statement, index) => ({
-              statementNumber: index + 1,
-              statementText: statement,
-            })),
+            statements: q.statements,
             statementInstruction: q.statementInstruction,
           }
         : {}),
@@ -282,6 +284,9 @@ const uploadBulkQuestions = catchAsync(async (req, res, next) => {
       session,
     });
 
+    // Clean up the uploaded file
+    await cleanupFile(req);
+
     await session.commitTransaction();
     session.endSession();
 
@@ -290,12 +295,15 @@ const uploadBulkQuestions = catchAsync(async (req, res, next) => {
       status: "success",
       message: `Successfully created ${insertedQuestions.length} questions`,
       data: {
-        totalCreated: insertedQuestions,
+        totalCreated: insertedQuestions.length,
       },
     });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
+
+    // Clean up file
+    await cleanupFile(req);
 
     // Handle common errors specifically
     if (error.name === "ValidationError") {
@@ -341,7 +349,11 @@ const validateBulkQuestions = catchAsync(async (req, res, next) => {
 
 // Middleware chain setup for routes
 const bulkQuestionController = {
-  uploadBulkQuestions: [uploadBulkQuestions],
+  uploadBulkQuestions: [
+    upload.single("file"),
+    processUploadedFile,
+    uploadBulkQuestions,
+  ],
   validateBulkQuestions: [
     upload.single("file"),
     processUploadedFile,

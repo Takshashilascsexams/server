@@ -1,0 +1,1176 @@
+[
+  {
+    "questionNumber": 1,
+    "questionText": "Which of the following pair / pairs are correctly matched?",
+    "statements": [
+      "Lord Curzon : Partition of Bengal",
+      "Lord Minto : Father of Separate Electorate",
+      "Lord Chelmsford : Jallianwala Bagh Massacre"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 3 only", "1 & 2 only", "2 only", "1, 2 & 3"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 2,
+    "questionText": "Consider the following statements regarding Reserve Bank of India (RBI):",
+    "statements": [
+      "RBI was set up based on the recommendations of the Royal Commission on Indian Currency and Finance (1926), also known as the Hilton Young Commission.",
+      "RBI was established on April 1, 1935 in accordance with the provisions of the Reserve Bank of India Act, 1934.",
+      "RBI was nationalised in 1949 and since then fully owned by the Ministry of Finance under Government of India.",
+      "In 2016, the Government of India amended the RBI Act to establish the Monetary Policy Committee."
+    ],
+    "statementInstructions": "How many of the above statements is/are correct?",
+    "options": ["Only one", "Only two", "Only three", "All four"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 3,
+    "questionText": "Recently, Israel launched a military campaign and invaded Gaza Strip on 27th October, 2023 since then the war continues to have significant regional and international repercussions. What in your opinion could be the possible reason for such escalation of hostilities?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "On 7 October 2023, Hamas-led militant groups launched a surprise attack on Israel, that resulted in the deaths of 1,195 people and taking 251 hostages.",
+      "The Houthis are backed by Iran and they are widely considered part of the Iranian-led \"Axis of Resistance\".",
+      "Hezbollah's manifesto outlined its key objectives include expelling Western influence from the region and destroying Israel.",
+      "None of these."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 4,
+    "questionText": "Consider the following statements about India:",
+    "statements": [
+      "India is the seventh-largest country in the world.",
+      "It has a land frontier of 15,200 km and a coastline of 7,516 km.",
+      "India's territorial waters extend into the sea to a distance of 12 nautical miles from the coast baseline.",
+      "The Ganges is the longest river originating in India after Brahmaputra."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1, 2 & 3 only", "1 & 4 only", "1, 3 & 4 only", "1, 2, 3 & 4"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 5,
+    "questionText": "Which of the following pairs is / are incorrect?",
+    "statements": [
+      "Net Neutrality : It is the principle that all internet traffic should be treated equally by internet service providers (ISPs) and telecom companies.",
+      "Rat-hole mining : It is a method of extracting coal from narrow and horizontal seams.",
+      "Social Engineering: It is a manipulation technique that exploits human error to gain private information, access, or valuables."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 3 only", "2 only", "2 & 3 only", "1, 2 & 3"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 6,
+    "questionText": "A presidential order under Article 370 of the Indian Constitution that revoked Jammu and Kashmir's special status, and mandating, inter alia, that all the provisions of the Indian Constitution would be applicable to Jammu and Kashmir. It became a law on __________________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "August 9, 2018",
+      "August 9, 2019",
+      "August 9, 2020",
+      "August 9, 2021"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 7,
+    "questionText": "The National Calendar based on the Saka Era, with Chaitra as its first month and a normal year of 365 days was adopted from ______________ along with the Gregorian calendar for the following official purposes: (i) Gazette of India, (ii) news broadcast by All India Radio, (iii) calendars issued by the Government of India and (iv) Government communications addressed to the public?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "March 22, 1956",
+      "March 22, 1957",
+      "March 22, 1958",
+      "March 22, 1959"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 8,
+    "questionText": "The Constitution of India lays down certain Directive Principles of State Policy (DPSP), which though not justiciable, are 'fundamental in governance of the country' and it is the duty of the state to apply these principles in making laws. These have been contained in ____________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Part III from Article 36 to 51 of the Constitution.",
+      "Part IV from Article 36 to 51 of the Constitution.",
+      "Part V from Article 36 to 51 of the Constitution.",
+      "Part VI from Article 36 to 51 of the Constitution."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 9,
+    "questionText": "India is updating its GDP base year to _________ by February 2026 for a more accurate economic reflection?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["2004 – 05", "2011 – 12", "2022 – 23", "None of these"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 10,
+    "questionText": "The 2030 Agenda for Sustainable Development, adopted by all United Nations (UN) members in 2015, created ________ world Sustainable Development Goals (SDGs)?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["16 SDGs", "17 SDGs", "18 SDGs", "19 SDGs"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 11,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Territorial Council are created by the Sixth Schedule of the Indian Constitution.",
+      "Statutory Autonomous Council constituted under the State Act."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 12,
+    "questionText": "The term \"WASH\", frequently referenced in governance initiatives, stands for:",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Water Accessibility and Sanitation for Health",
+      "Water, Sanitation, and Hygiene",
+      "Water and Sanitation for Habitat",
+      "Wastewater Accessibility and Sanitation Hygiene"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 13,
+    "questionText": "Which of the following statements is / are incorrect?",
+    "statements": [
+      "Ali-Ai-Ligang a spring festivity associated with agriculture celebrated by the Mising people of Assam.",
+      "Me dam me phi is a socio-traditional festival celebrated by the Tai-Ahom people of Assam.",
+      "Kherai is the greatest religious festival of Dimasas."
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["1 & 3 only", "3 only", "1 & 2 only", "1, 2 & 3"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 14,
+    "questionText": "North Atlantic Treaty Organization (NATO) has been a very important military alliance since its formation in 1949. In light of recent geopolitical tensions, particularly following Russia's invasion of Ukraine, discussions around defence spending among member states have intensified. Who among the following is the newest member of NATO?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Sweden", "Belgium", "Turkey", "United Kingdom"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 15,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Bharatiya Nyaya Sanhita (BNS) is the official criminal code in India.",
+      "It came into effect on 1 July 2024 after being passed by the parliament in December 2023",
+      "It will replace the Indian Penal Code (IPC)."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 3 only", "2 & 3 only", "3 only", "1, 2 & 3"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 16,
+    "questionText": "Maha Kumbh is held every 12 years. The 2025 event starts on January 13 and ends on February 26. The Maha Kumbh Mela set to commence in _____________, Uttar Pradesh?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Prayagraj", "Varanasi", "Lucknow", "None of these"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 17,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "The Annual Financial Statement is popularly known as the 'Budget'.",
+      "It is presented to Parliament by the Finance Minister each year on the first working day of February.",
+      "Under Article 112 of the Constitution, a statement of estimated receipts and expenditure of the Government of India has to be laid before Parliament in respect of every financial year."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 2 only", "2 only", "1 & 3 only", "1, 2 & 3"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 18,
+    "questionText": "Match the events in List – I with their respective years in List – II:",
+    "statements": [
+      "A. Simla Conference - 1) 1928",
+      "B. Quit India Movement - 2) 1945",
+      "C. Home Rule Movement - 3) 1916",
+      "D. Nehru Report - 4) 1942"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": [
+      "A-2, B-4, C-3, D-1",
+      "A-1, B-3, C-4, D-2",
+      "A-3, B-4, C-1, D-2",
+      "A-4, B-3, C-2, D-1"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 19,
+    "questionText": "Consider the following statements about the SHAKTI Scheme:",
+    "statements": [
+      "It is a central government initiative designed to provide coal linkage to thermal power plants.",
+      "It encourages renewable energy generation in states with coal shortages."
+    ],
+    "statementInstructions": "Which of the statements given above is/are correct?",
+    "options": ["1 only", "2 only", "Both 1 and 2", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 20,
+    "questionText": "Article 44 of the Indian Constitution is related to which of the following?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Fundamental Rights",
+      "Uniform Civil Code (UCC)",
+      "Rights of the Tribals",
+      "None of the above"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 21,
+    "questionText": "Which of the following is NOT a characteristic of Zaid crops in India?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "They are grown between the Rabi and Kharif seasons.",
+      "They need heavy rainfall for optimal growth.",
+      "They typically include seasonal fruits and vegetables.",
+      "They have a shorter growing season compared to Rabi and Kharif crops."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 22,
+    "questionText": "What best describes a windfall tax?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "A tax imposed only on multinational corporations operating in foreign nations.",
+      "A tax levied on unexpected or unusually high profits, often resulting from external factors.",
+      "A tax specifically targeting the energy sector to encourage renewable energy sources.",
+      "A tax applied to long-term capital gains from investments."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 23,
+    "questionText": "Which of the following best distinguishes \"Adjournment Sine Die\" from \"Prorogation\"?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Adjournment sine die is decided by the President, while prorogation is decided by the Speaker.",
+      "Adjournment sine die refers to indefinite suspension, while prorogation marks the formal end of a Parliamentary session.",
+      "Adjournment sine die dissolves the House, while prorogation merely ends a session.",
+      "Adjournment sine die and prorogation are identical in meaning."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 24,
+    "questionText": "Which of the following greenhouse gases have the highest atmospheric lifetime in years?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Methane",
+      "Nitrous Oxide",
+      "Hydrofluorocarbons",
+      "Chlorofluorocarbons"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 25,
+    "questionText": "Which of the following Articles of the Constitution of India provides for separation of judiciary from executive?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Article 51", "Article 50", "Article 49", "Article 48"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 26,
+    "questionText": "The 18th edition of the Pravasi Bharatiya Divas will take place in Bhubaneswar from January 8 to 10, 2025. The event aims to strengthen ties with the Indian diaspora and celebrate their contributions to the nation's development. Which of the following statements is / are correct?",
+    "statements": [
+      "Pravasi Bharatiya Divas is celebrated annually on January 9. This date marks Mahatma Gandhi's return to India from South Africa in 1915.",
+      "This year's theme is \"Diaspora's Contribution to a Viksit Bharat.\""
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 27,
+    "questionText": "Who was the member of the Parliament from Guwahati Lok Sabha constituency in the first Lok Sabha?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Fakhruddin Ali Ahmed",
+      "Hem Barua",
+      "Rohini Kumar Chaudhuri",
+      "Debakanta Baruah"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 28,
+    "questionText": "CRISIL is often seen in the news, it is a:",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "An international NGO focussed on disaster management",
+      "Credit rating agency headquartered in India",
+      "A global energy finance company",
+      "Group of least developed countries (LDCs) committed to development"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 29,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "North Eastern Council (NEC) is a statutory advisory body constituted under the North Eastern Council Act 1971 and came into being on 8 August 1972.",
+      "The eight States of Northeast India are members of the council, with their respective Chief Ministers and Governors representing them.",
+      "The headquarters of the council is situated in Shillong and functions under the Ministry of Development of North Eastern Region (DONER) of the Government of India."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 2 only", "1 & 3 only", "1 only", "1, 2 & 3"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 30,
+    "questionText": "The infrastructure development project with the aim of promoting 'port-led development' in India has been named __________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Bharatmala", "Sagarmata", "Sagarnaman", "Sagarmala"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 31,
+    "questionText": "The design of the National Flag was adopted by the Constitutent Assembly of India on __________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "July 22, 1946.",
+      "July 22, 1947.",
+      "July 22, 1948.",
+      "July 22, 1950."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 32,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "India is a federal union comprising 28 states and 8 union territories.",
+      "All states, as well as the union territories of Jammu and Kashmir, Puducherry and the National Capital Territory of Delhi, have elected legislatures and governments following the Westminster system of governance.",
+      "In 1956, under the States Reorganisation Act, states were reorganised on a linguistic basis."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 2 only", "2 & 3 only", "1 only", "1, 2 & 3"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 33,
+    "questionText": "With which of the following states does Myanmar not share the border?",
+    "statements": [
+      "Mizoram",
+      "Manipur",
+      "Assam",
+      "Arunachal Pradesh",
+      "Tripura"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1, 2 & 4 only", "3 & 5 only", "3 only", "3, 4 & 5 only"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 34,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "The Geographical Indications of Goods (Registration and Protection) Act was launched in India in 1999",
+      "Assam received the GI tag for 'Gamocha' five years after the application was made",
+      "The process of application for GI tag of 'Gamocha' was filed by the Institute of Handicraft Development of Jorhat district",
+      "The certificate of GI tag has been awarded for 'Gamocha' as on 16th July, 2017"
+    ],
+    "statementInstructions": "Which of the above statements is/are incorrect?",
+    "options": ["3 & 4 only", "2 only", "4 only", "1, 2, 3 & 4"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 35,
+    "questionText": "____________ atmospheric layer contains Ions and helps in wireless communication?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Mesosphere", "Thermosphere", "Troposphere", "Stratosphere"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 36,
+    "questionText": "Match the Autonomous Council in List – I with their respective years in List – II:",
+    "statements": [
+      "A. Mising Autonomous Council - 1) 2020",
+      "B. Deori Autonomous Council - 2) 2003",
+      "C. Bodoland Territorial Council - 3) 1995",
+      "D. Kamtapur Autonomous Council - 4) 2005"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": [
+      "A-3, B-4, C-2, D-1",
+      "A-4, B-3, C-1, D-2",
+      "A-2, B-4, C-3, D-1",
+      "A-3, B-2, C-1, D-4"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 37,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Amount of water vapour decreases from equator to pole wards.",
+      "Water vapour absorbs some portion of the heat emitted from the Sun and stores the heat coming out of the Earth.",
+      "Water vapour acts like a blanket and does not allow the Earth to get too hot nor too cold."
+    ],
+    "statementInstructions": "How many of the statements given above are correct?",
+    "options": ["Only one", "Only two", "All three", "None"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 38,
+    "questionText": "The river Bhagirathi meets Alaknanda river at __________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Dev Prayag", "Vishnu Prayag", "Rudra Prayag", "Karna Prayag"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 39,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Bal Gangadhar Tilak was the first leader to use the word 'Swaraj'",
+      "Valentine Chirol called Tilak as the 'Father of Indian Unrest'",
+      "Kesari and Maratha were the important publications of Tilak",
+      "Tilak was given a sentence of six years jail punishment in 1908"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["2, 3 & 4 only", "1 & 4 only", "2 & 4 only", "1, 2, 3 & 4"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 40,
+    "questionText": "Which leader is popularly known as Deshbandhu?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["C.R. Das", "C.F. Andrews", "G.K. Gokhale", "None of these"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 41,
+    "questionText": "With reference to Census of India consider the following statements:",
+    "statements": [
+      "The first official population census of India was conducted in 1872.",
+      "Since 1949, it has been conducted by the Registrar General and Census Commissioner of India under the Ministry of Home Affairs.",
+      "The slogan of Census 2011 is \"Our Census, Our Future\"."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 3 only", "2 & 3 only", "3 only", "1, 2 & 3"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 42,
+    "questionText": "With reference to first council of minister of independent India which of the following pairs is not true?",
+    "statements": [
+      "Jawaharlal Nehru : Minister of External Affairs and Commonwealth relations",
+      "Sardar Vallabhbhai Patel: Minister of Home Affairs and States",
+      "Maulana Abul Kalam Azad : Minister of Education"
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["1, 2 & 3", "1 only", "3 only", "None"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 43,
+    "questionText": "Which of the following statements is/are not correct?",
+    "statements": [
+      "National Planning Committee was set up under the INC president Subhash Chandra Bose in 1938",
+      "All India Forward Bloc was founded by Bose in 1939"
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["Both 1 & 2", "1 only", "2 only", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 44,
+    "questionText": "With reference to Partition of Bengal which of the following statements is/are true?",
+    "statements": [
+      "Partition was announced on 20th July 1905 and put into effect on 16th October 1905",
+      "Sir Andrew Fraser was the Lieutenant Governor of Bengal at the time of Partition",
+      "British used the partition to carry out their divide and rule agenda in India"
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["1, 2 & 3", "1 & 3 only", "2 only", "2 & 3 only"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 45,
+    "questionText": "Recently, 'Al Aqsa' mosque was in news. This mosque is located in _____?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Tel Aviv", "Jerusalem", "Sanaa", "Abu Dhabi"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 46,
+    "questionText": "Which of these tributaries is not a north bank tributary of Brahmaputra?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Subansiri", "Ronganadi", "Kulsi", "Jiabhorali"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 47,
+    "questionText": "Which of these country does not share an international boundary with Russia?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Norway", "Sweden", "Finland", "Poland"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 48,
+    "questionText": "With reference to Dima Hasao district which of these following is/are not true?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "It is one of the three hill district of Assam and its headquarter is located at Haflong",
+      "It shares boundary with neighbouring states of Nagaland, Manipur and Meghalaya",
+      "It is the second largest district of Assam after Karbi Anglong",
+      "Laike, highest peak of Assam, is located in the district"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 49,
+    "questionText": "Which of the following pair is incorrect?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Jonbeel Mela : Tiwa Tribe",
+      "Wangala : Khasi Tribe",
+      "Porag Festival : Mising Tribe",
+      "Behdienkhlam Festival : Jaintia Tribe"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 50,
+    "questionText": "Some women of Assam took part in the Civil Disobedience Movement very actively. To mobilize the girls in the National Movement, an organization namely namely the 'Mukti Sangha' was established by a few prominent and leading activists. Their fiery spirited speeches encouraged many young minds to fight for 'Poorna Swaraj'. It was during this movement that at various places of Assam Nari Bahinis or Women Squads were formed for carrying out various programmes of the movement. Examine the above statement and select the one who was not related with the Mukti Sangha.",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Pushpalata Das", "Sarala Saxena", "Punyaprava Barua", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 51,
+    "questionText": "Which are the elements of sustainable agriculture?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Permaculture",
+      "Agroforestry",
+      "Mixed Farming",
+      "All of these"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 52,
+    "questionText": "Consider the following pairs:",
+    "statements": [
+      "Lachit Divas : 24 November",
+      "Rhinoceros Day : 27 September",
+      "Krishak Divas : 23 December",
+      "Chatra Divas : 31 March"
+    ],
+    "statementInstructions": "Which of the pairs given above is not correct?",
+    "options": ["1 and 3", "2 only", "4 only", "2 and 3"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 53,
+    "questionText": "Who among the following eminent Assamese attended the First Round Table Conference held in London in 1930?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Chandradhar Barua",
+      "Hemchandra Goswami",
+      "Lakshminath Bezbaruah",
+      "Padmanath Gohain Baruah"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 54,
+    "questionText": "Why is the Prime Minister in India not directly elected by the people? Choose the most appropriate answer and give reasons for your choice:",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "In a Parliamentary democracy only the leader of the majority party in the Lok Sabha can become the Prime Minister.",
+      "Lok Sabha can remove the Prime Minister and the Council of Ministers even before the expiry of their term.",
+      "Since the Prime Minister is appointed by the President there is no need for it.",
+      "Direct election of the Prime Minister will involve lot of expenditure on election."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 55,
+    "questionText": "Which of the following is the correct statement regarding 'carbon footprint' in the context of global warming?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "It is a measure of greenhouse gas emissions by vehicles or any industrial product.",
+      "It is a unit under the Kyoto Protocol for reduction in emission of greenhouse gases.",
+      "It is an administrative measure to control pollution by providing incentive.",
+      "All of the above."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 56,
+    "questionText": "'Thang ta', a martial art form is associated with which state of India?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Mizoram", "Nagaland", "Manipur", "Tripura"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 57,
+    "questionText": "In spite of being a non-member, who among the following can participate in the proceedings of either House of Parliament, without having the right to vote?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Vice President",
+      "Chief Justice of India",
+      "Attorney General of India",
+      "Comptroller and Auditor General of India"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 58,
+    "questionText": "Any such transaction, in which property is transferred in the name of one person and payment is made by another person, is called __________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Hawala",
+      "Benami transaction",
+      "Money laundering",
+      "Black money"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 59,
+    "questionText": "The \"Chipko Movement\" in India is known for:",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Advocating for the rights of forest-dwelling tribal communities",
+      "Promoting the commercialization of forest resources",
+      "Encouraging the construction of large-scale dams in forested areas",
+      "Opposing deforestation and environmental degradation"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 60,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "BRICS is an acronym representing Brazil, Russia, India, China, and South Africa. The group was informally established in 2006 and formalised in 2009.",
+      "The inaugural summit of BRICS took place in Yekaterinburg, Russia.",
+      "BRICS has since included additional members, including Iran, Egypt, Ethiopia and UAE, reflecting its growing prominence in global affairs.",
+      "Recently, Indonesia has officially become a full member of the BRICS group."
+    ],
+    "statementInstructions": "How many of the statements given above is/are correct?",
+    "options": ["Only one", "Only two", "Only three", "All four"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 61,
+    "questionText": "'He was greeted with empty streets and downed shutters wherever he went upon his arrival in the country' The Visit of the Prince of Wales took place during which among the following in India?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Civil Disobedience Movement",
+      "Quit India Movement",
+      "Non-Cooperation Movement",
+      "None of the above"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 62,
+    "questionText": "Which of the following leaders signed the Tashkent Agreement?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Vallabhbhai Patel and Jinnah",
+      "Jawaharlal Nehru and Ayub Khan",
+      "Lal Bahadur Shastri and Ayub Khan",
+      "Jawaharlal Nehru and Jinnah"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 63,
+    "questionText": "Who is the first non-Indian to receive Bharat Ratna?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Dr. Martin Luther King, Jr.",
+      "Mother Teresa",
+      "Khan Abdul Ghaffar Khan",
+      "None of the above"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 64,
+    "questionText": "Which of the given animals' symbol (Seal) was adopted as the symbol of the constituent assembly?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Elephant", "Lion", "Tiger", "Deer"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 65,
+    "questionText": "River Sutlej enters India through which pass?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Zoji la", "Nathu la", "Lipulekh", "Shipki la"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 66,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Sikkim shares international boundaries with Bhutan, China, and Nepal.",
+      "Arunachal Pradesh, Nagaland, Manipur, and Mizoram share an international boundary with Myanmar."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 67,
+    "questionText": "Which of the following state is not under Gauhati High Court?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Nagaland", "Mizoram", "Manipur", "Arunachal Pradesh"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 68,
+    "questionText": "How many Articles are there in the 'Universal Declaration of Human Rights'?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["29 articles", "28 articles", "30 articles", "32 articles"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 69,
+    "questionText": "During the Indian Freedom Struggle, why did the Rowlatt Act arouse popular indignation?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "It curtailed the freedom of religion.",
+      "It suppressed traditional Indian education.",
+      "It authorized the Government to imprison people without trial.",
+      "It curbed trade union activities."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 70,
+    "questionText": "Which one of the following is not basic elements of the citizen charter?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Description of services being provided by department or the agency.",
+      "Promotion of various methods to get benefit from the services available.",
+      "To expect any public record.",
+      "Provision for the inspection of the agency's work."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 71,
+    "questionText": "If a tropical rain forest is removed, it does not regenerate quickly as compared to a tropical deciduous forest. This is because",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "exotic species invade the fertile soil of rain forest.",
+      "the rain forest species are slow-growing.",
+      "propagules of the trees in a rain forest have poor viability.",
+      "the soil of rain forest is deficient in nutrients."
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 72,
+    "questionText": "Biogas mainly comprises hydro-carbon which is combustible and can produce heat and energy when burnt. It's main component is?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Methane", "Oxygen", "Nitrogen", "Carbon"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 73,
+    "questionText": "Allelopathy is need to describe which of the following?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "The generation of toxins by one species which inhibits the development of another",
+      "The pathogen's sporulation is inhibited by the host",
+      "Changing the reproductive cycle of one organism by changing the reproductive cycle of another",
+      "By suppressing the reproduction, one species might stifle the expansion of another"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 74,
+    "questionText": "With reference to Central Bureau of Investigation (CBI) consider the following:",
+    "statements": [
+      "It was recommended by the Santhanam Committee on the prevention of corruption",
+      "It was established in 1963 by a resolution made by the Ministry of Home Affairs.",
+      "It attributes its powers to the Delhi Special Police Establishment Act of 1946.",
+      "It provides assistance to the Central Vigilance Commission and Lokpal."
+    ],
+    "statementInstructions": "How many of the above statements is/are correct?",
+    "options": ["Only one", "Only two", "Only three", "All four"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 75,
+    "questionText": "The nomenclature of rural local governments as 'Panchayati Raj' was the result of the suggestion of which Indian leader?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Jawaharlal Nehru",
+      "Dr. Rajendra Prasad",
+      "Sardar Patel",
+      "M. K. Gandhi"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 76,
+    "questionText": "Which gas is responsible for depletion of ozone layer?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Carbon dioxide",
+      "Carbon monoxide",
+      "Nitrous oxide",
+      "Chlorofluorocarbons"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 77,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "On 8 April 1929, Bhagat Singh and Batukeshwar Dutt threw two bombs into the Assembly chamber from its public gallery while it was in session.",
+      "Bhagat Singh, Rajguru and Sukhdev were sentenced to death in the Lahore conspiracy case and were hanged on 23 March 1931."
+    ],
+    "statementInstructions": "Which of the statements given above is / are incorrect?",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 78,
+    "questionText": "The word \"Green Revolution\" was in 1968 coined by?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "William S. Gaud",
+      "Norman Borlaug",
+      "Indira Gandhi",
+      "MS Swaminathan"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 79,
+    "questionText": "Consider the following statements about Zero FIR:",
+    "statements": [
+      "Zero FIR was introduced after the recommendation of the Justice Verma Committee, which was set up after the 2012 Nirbhaya gangrape case.",
+      "It is an FIR that is registered irrespective of the area where the offence is committed and the police can no longer claim that they have no jurisdiction over the case."
+    ],
+    "statementInstructions": "Which of the above statement is/are incorrect?",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 80,
+    "questionText": "With reference to River Brahmaputra consider the following statements:",
+    "statements": [
+      "It originates from Chemayungdung glacier of the Kailash range near the Mansarovar lake.",
+      "It takes a U-turn on reaching Namcha Barwa.",
+      "In Tibet it is known as the Tsangpo, which means 'the purifier.'"
+    ],
+    "statementInstructions": "Which of the statements given above is /are incorrect?",
+    "options": ["1 only", "2 only", "3 only", "None"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 81,
+    "questionText": "Which of the following is / are included in UNESCO World Heritage sites:",
+    "statements": [
+      "Kaziranga National Park",
+      "Manas National Park",
+      "Moidam at Charaideo"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 2 only", "1 only", "1, 2 & 3", "None"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 82,
+    "questionText": "With reference to Chief minister's Atmanirbhar Asom Abhijan (CMAAA) consider the following statements:",
+    "statements": [
+      "Under the CMAAA scheme, general graduate beneficiaries to get a maximum of Rs 2 lakh as assistance from the government, while entrepreneurs having professional degrees can get up to Rs 5 lakh as financial assistance from the government.",
+      "While 50 % will be given as financial assistance, 50 % will be given as interest free government loans."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 83,
+    "questionText": "Recently, the Chief Miniter of Assam announced that _____________ will become the state's second capital within three years along with a permanent assembly building?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Jorhat", "Dibrugarh", "Sibsagar", "Tezpur"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 84,
+    "questionText": "Who did not hold the office of the Speaker of Assam Legislative Assembly?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Numal Momin",
+      "Ranjit Kumar Das",
+      "Biswajit Daimary",
+      "Ganesh Kutum"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 85,
+    "questionText": "'Singarigharutha' was the traditional coronation ceremony of which kingdom of medieval Assam?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Kachari Kingdom", "Ahom Kingdom", "Chutia Kingdom", "None"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 86,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Tinsukia district shares boundary with the district of Dhemaji and Dibrugarh only.",
+      "Seven districts of Assam shares border with the state of Arunachal Pradesh."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 87,
+    "questionText": "Match the Festival/Event in List – I with their respective community in List – II:",
+    "statements": [
+      "A) Bohuwa - 1) Dimasa",
+      "B) Gumrag - 2) Deshi",
+      "C) Beshoma - 3) Sonowal",
+      "D) Baidima - 4) Mising"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": [
+      "A-3, B-4, C-2, D-1",
+      "A-4, B-3, C-1, D-2",
+      "A-2, B-4, C-3, D-1",
+      "A-4, B-1, C-2, D-3"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 88,
+    "questionText": "The 'Statue of Unity' is located on the Narmada river-facing ________________ in Kevadiya colony, Narmada District in the Indian State of Gujarat?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Sardar Sarovar Dam",
+      "Hirakud Dam",
+      "Gandhi Sagar Dam",
+      "Tehri Dam"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 89,
+    "questionText": "Power to grant pardons by the President of India under _____________ of the Indian Constitution?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": ["Article 71", "Article 72", "Article 73", "Article 74"],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 90,
+    "questionText": "With reference to Hiuen Tsang consider the following statements:",
+    "statements": [
+      "He visited Assam in 640 AD and attended the court of Kamrupa king Bhaskar Varman",
+      "He was the first Chinese monk to travel to India in search of great Buddhist scriptures.",
+      "He wrote the book 'Si-Yu-Ki' after visiting Harshavardhana court."
+    ],
+    "statementInstructions": "Which of the statements given above is / are incorrect?",
+    "options": ["1 & 2 only", "2 only", "1 & 3 only", "1, 2 & 3"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 91,
+    "questionText": "With reference to Mising Sahitya Sabha, also known as Mising Agom Kébang, which of the following statements is / are correct?",
+    "statements": [
+      "It was established on 18 April 1972 at Disangmukh in the district of Sivasagar, Assam.",
+      "It has demanded the use of Mising language as a medium of instruction at the school level which has been accepted by the Government of Assam."
+    ],
+    "statementInstructions": "Select the answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 92,
+    "questionText": "The Union Council of Ministers is the principal executive organ of the Government of India, which serves to aid and advice the President of India in execution of their functions. It is chaired by the Prime Minister of India and consists of the heads of each of the executive government ministries. Currently, who is the Finance Minister of India?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Amit Shah",
+      "Rajnath Singh",
+      "Nirmala Sitaraman",
+      "Nitin Gadkari"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 93,
+    "questionText": "Consider the following pairs:",
+    "statements": [
+      "Religion / Sect - Founder",
+      "1) Jainism : Mahavira",
+      "2) Buddhism : Gautam Buddha",
+      "3) Ajivikas : Makhali Gosala"
+    ],
+    "statementInstructions": "Select the incorrectly matched pairs using the codes given below:",
+    "options": ["1 only", "2 & 3 only", "1 & 3 only", "None"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 94,
+    "questionText": "On 25 April 1945, 50 nations assembled in San Francisco, California, for a conference and initialized the drafting of the UN Charter, which was adopted on 25 June 1945. The charter took effect on 24 October 1945, when the United Nation (UN) began operations. The UN is the successor of which organisation?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "League against Imperialism",
+      "League of Nation",
+      "International Court of Justice",
+      "Court of Arbitration"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 95,
+    "questionText": "__________________, a prince of the Mao-Shan sub-tribe left Mong Mao in 1215. He was accompanied by three queens, two sons and a daughter; chiefs from five other dependent Mongs; members of the priestly class and soldiers—a total contingent of 9,000. He was the founder of the Ahom kingdom and the architect of Assam. The kingdom he established in 1228 existed for nearly six hundred years and in the process unified the various ethnic groups of the region that left a deep impact on the region?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "Chaolung Sukaphaa",
+      "Suhungmung",
+      "Susenghphaa",
+      "Sukhrungphaa"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 96,
+    "questionText": "Match the following Historical Event in List – I with their respective Years in List – II:",
+    "statements": [
+      "A) Industrial Revolution - 1) 1917",
+      "B) American Revolution - 2) 1789",
+      "C) French Revolution - 3) 1776",
+      "D) Russian Revolution - 4) 1750"
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": [
+      "A-4, B-3, C-2, D-1",
+      "A-3, B-4, C-1, D-2",
+      "A-4, B-2, C-3, D-1",
+      "A-1, B-2, C-3, D-4"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 97,
+    "questionText": "With reference to Treaty of Yandabo consider the following statements:",
+    "statements": [
+      "The treaty was signed on 24 February 1826 that ended the First Anglo-Burmese War.",
+      "It was signed by Gen. Campbell from the British side and Governor of Legaing Maha Min Hla Kyaw Htin from the Burmese side.",
+      "Burmese King Bagyidaw signed the treaty with the British with payment of an indemnity equivalent to £1,000,000 and renunciation of all Burmese claims in Assam and Manipur, which became British protectorates."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 & 3 only", "1 & 2 only", "1 only", "1, 2 & 3"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 98,
+    "questionText": "Consider the following statements:",
+    "statements": [
+      "Bhupen Hazarika Bridge connects the village of Dhola in the south to the village of Sadiya to the north, both in Tinsukia district of Assam.",
+      "Bogibeel Bridge between Dhemaji district and Dibrugarh district, is the longest rail-cum-road bridge in India."
+    ],
+    "statementInstructions": "Select the correct answer using the codes given below:",
+    "options": ["1 only", "2 only", "Both 1 & 2", "Neither 1 nor 2"],
+    "type": "STATEMENT_TYPE"
+  },
+  {
+    "questionNumber": 99,
+    "questionText": "Read the following Text (1 & 2) and answer the following question: Text 1: Social media platforms have transformed the way people communicate, offering instant connectivity and a platform for sharing information and ideas. However, concerns have been raised about the negative impact of social media on mental health, particularly among teenagers. Studies have linked excessive social media use to increased feelings of anxiety, depression, and loneliness. Text 2: Psychologist Dr. Srivastava conducted a study to explore the relationship between social media use and mental health. She found that the impact of social media on mental health varies depending on how it is used. For example, active engagement, such as meaningful interactions and content creation, was associated with positive mental health outcomes, while passive consumption, such as scrolling through feeds without interaction, was linked to negative mental health outcomes. Based on the texts, how would Dr. Srivastava (Text 2) most likely respond to the concerns about social media's impact on mental health discussed in Text 1?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "By arguing that social media has no impact on mental health",
+      "By suggesting that all forms of social media use are harmful to mental health",
+      "By acknowledging the concerns but emphasizing that the impact depends on how social media is used",
+      "By claiming that social media always leads to positive mental health outcomes"
+    ],
+    "type": "MCQ"
+  },
+  {
+    "questionNumber": 100,
+    "questionText": "Read the passage and answer the following question: \"I read somewhere that in ancient times the prestige of a kingdom depended upon the number of taxes that it was able to levy on its people. It was very much like the prestige of a head-hunter in his own community.\" Based on the paragraph above, the prestige of a head-hunter depended upon ___________?",
+    "statements": [],
+    "statementInstructions": "",
+    "options": [
+      "the prestige of the kingdom",
+      "the prestige of the heads",
+      "the number of taxes he could levy",
+      "the number of heads he could gather"
+    ],
+    "type": "MCQ"
+  }
+]
