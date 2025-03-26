@@ -7,6 +7,7 @@ import User from "../../models/user.models.js";
 import mongoose from "mongoose";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import storage from "../../utils/multerConfig.js";
+import { checkExamExists, getUserId } from "../../utils/cachedDbQueries.js";
 
 // Configure file filter - only allow JSON files
 const fileFilter = (req, file, cb) => {
@@ -126,13 +127,6 @@ const cleanupFile = async (req) => {
   }
 };
 
-// Cache for frequently accessed data
-const cache = {
-  exams: new Map(),
-  users: new Map(),
-  expiryTime: 10 * 60 * 1000, // 10 minutes
-};
-
 // Shared middleware to process the uploaded file - optimized for batches
 const processUploadedFile = catchAsync(async (req, res, next) => {
   if (!req.file) {
@@ -167,50 +161,6 @@ const processUploadedFile = catchAsync(async (req, res, next) => {
     return next(new AppError(error.message, 500));
   }
 });
-
-// Helper function to check if exam exists with caching
-const checkExamExists = async (examId) => {
-  // Check cache first
-  if (cache.exams.has(examId)) {
-    const cachedItem = cache.exams.get(examId);
-    if (Date.now() - cachedItem.timestamp < cache.expiryTime) {
-      return cachedItem.exists;
-    }
-  }
-
-  // If not in cache or expired, check database
-  const exists = await Exam.exists({ _id: examId });
-
-  // Update cache
-  cache.exams.set(examId, {
-    exists,
-    timestamp: Date.now(),
-  });
-
-  return exists;
-};
-
-// Helper function to get user with caching
-const getUserId = async (clerkId) => {
-  // Check cache first
-  if (cache.users.has(clerkId)) {
-    const cachedItem = cache.users.get(clerkId);
-    if (Date.now() - cachedItem.timestamp < cache.expiryTime) {
-      return cachedItem.userId;
-    }
-  }
-
-  // If not in cache or expired, check database
-  const user = await User.findOne({ clerkId }).select("_id").lean();
-
-  // Update cache
-  cache.users.set(clerkId, {
-    userId: user ? user._id : null,
-    timestamp: Date.now(),
-  });
-
-  return user ? user._id : null;
-};
 
 // Optimized controller for batch uploads
 const uploadBulkQuestions = catchAsync(async (req, res, next) => {
@@ -253,11 +203,11 @@ const uploadBulkQuestions = catchAsync(async (req, res, next) => {
       examId,
       questionText: q.questionText,
       marks: parseInt(marks, 10),
-      type: q.type === "STATEMENT_TYPE" ? "STATEMENT_BASED" : q.type,
+      type: q.type,
       options: q.options.map((option) => ({
         optionText: option,
       })),
-      difficultyLevel: difficultyLevel.toUpperCase(),
+      difficultyLevel,
       subject,
       hasNegativeMarking:
         hasNegativeMarking === "true" || hasNegativeMarking === true,

@@ -59,7 +59,7 @@ const ExamSchema = new mongoose.Schema(
     difficultyLevel: {
       type: String,
       enum: difficultyLevel,
-      default: "Easy",
+      default: "EASY",
     },
     category: {
       type: String,
