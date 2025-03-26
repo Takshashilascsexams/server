@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { questionTypes, difficultyLevel } from "../utils/arrays.js";
 
 // schema for options
 const optionSchema = new mongoose.Schema(
@@ -71,14 +72,7 @@ const questionSchema = new mongoose.Schema(
       type: String,
       required: [true, "Question type is required"],
       enum: {
-        values: [
-          "MCQ",
-          "MULTIPLE_SELECT",
-          "TRUE_FALSE",
-          "SHORT_ANSWER",
-          "LONG_ANSWER",
-          "STATEMENT_BASED", // New type for statement-based questions
-        ],
+        values: questionTypes,
         message:
           "Question type must be one of: MCQ, MULTIPLE_SELECT, TRUE_FALSE, SHORT_ANSWER, LONG_ANSWER, STATEMENT_BASED",
       },
@@ -89,33 +83,23 @@ const questionSchema = new mongoose.Schema(
       validate: {
         validator: function (options) {
           // For MCQ and MULTIPLE_SELECT, options are required
-          if (
-            [
-              "MCQ",
-              "MULTIPLE_SELECT",
-              "TRUE_FALSE",
-              "STATEMENT_BASED",
-            ].includes(this.type)
-          ) {
+          if (["MCQ"].includes(this.type)) {
             return options && options.length > 0;
           }
           return true;
         },
         message:
-          "Options are required for MCQ, MULTIPLE_SELECT, TRUE_FALSE, and STATEMENT_BASED questions",
+          "Options are required for MCQ, MULTIPLE_SELECT and TRUE_FALSE questions",
       },
     },
     correctAnswer: {
       type: String,
       required: false,
-      // required: function () {
-      //   return !["STATEMENT_BASED", "MULTIPLE_SELECT"].includes(this.type);
-      // },
     },
     // Difficulty and categorization
     difficultyLevel: {
       type: String,
-      enum: ["EASY", "MEDIUM", "HARD"],
+      enum: difficultyLevel,
       default: "MEDIUM",
       index: true, // Index for filtering by difficulty
     },
@@ -143,7 +127,7 @@ const questionSchema = new mongoose.Schema(
 
     // Media and additional content
     image: {
-      type: String, // URL to image
+      type: String,
       trim: true,
     },
     explanation: {
