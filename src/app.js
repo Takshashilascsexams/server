@@ -10,10 +10,14 @@ import rateLimit from "express-rate-limit";
 import hpp from "hpp";
 import path from "path";
 import fs from "fs";
+import mongoose from "mongoose";
 
 // middlewares utilities functions
 import compressResponse from "./utils/compressResponse.js";
 import { AppError, errorController } from "./utils/errorHandler.js";
+
+// services
+import { checkHealth } from "./services/redisService.js";
 
 // routes
 import examRoute from "./routes/exam.routes.js";
@@ -44,6 +48,19 @@ process.on("unhandledRejection", (err) => {
 const app = express();
 
 // 1) GLOBAL MIDDLEWARES
+// Cors
+const corsOptions = {
+  origin: process.env.CLIENT || "http://localhost:3000",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
+
 // Response compression middleware
 app.use(compressResponse);
 
@@ -86,23 +103,21 @@ app.use((req, res, next) => {
   next();
 });
 
-const corsOptions = {
-  // origin: env.CLIENT,
-  origin: process.env.CLIENT || "*",
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-
 // 2) ROUTES
 // Public route
 // Health check route
-app.get("/health", (req, res) => {
+app.get("/health", async (req, res) => {
+  const mongoStatus = mongoose.connection.readyState === 1;
+  const redisStatus = await checkHealth();
+
   res.status(200).json({
     status: "success",
-    message: "Server is healthy",
+    message: "Server health check",
+    services: {
+      server: "healthy",
+      database: mongoStatus ? "connected" : "disconnected",
+      redis: redisStatus ? "connected" : "disconnected",
+    },
     environment: process.env.NODE_ENV,
     timestamp: new Date().toISOString(),
   });

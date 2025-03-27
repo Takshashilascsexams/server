@@ -1,7 +1,8 @@
 import Exam from "../../models/exam.models.js";
-import User from "../../models/user.models.js";
 import ExamAnalytics from "../../models/examAnalytics.models.js";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
+import { getUserId } from "../../utils/cachedDbQueries.js";
+import { examService, analyticsService } from "../../services/redisService.js";
 
 const createExam = catchAsync(async (req, res, next) => {
   const {
@@ -31,14 +32,18 @@ const createExam = catchAsync(async (req, res, next) => {
       difficultyLevel,
       category,
       allowNavigation,
-    ].some((value) => value === null && value === undefined)
+    ].some((value) => value === null || value === undefined)
   ) {
     return next(
-      new AppError("Please provide all the fields for a new exam", 401)
+      new AppError("Please provide all the fields for a new exam", 400)
     );
   }
 
-  const user = await User.findOne({ clerkId: req.user.sub });
+  const userId = await getUserId(req.user.sub);
+
+  if (!userId) {
+    return next(new AppError("User not found", 404));
+  }
 
   const newExamBody = {
     title,
@@ -52,7 +57,7 @@ const createExam = catchAsync(async (req, res, next) => {
     difficultyLevel,
     category,
     allowNavigation: allowNavigation === "Yes" ? true : false,
-    createdBy: user._id,
+    createdBy: userId,
   };
 
   // Create the test series
@@ -72,7 +77,19 @@ const createExam = catchAsync(async (req, res, next) => {
     failPercentage: 0,
   };
 
-  await ExamAnalytics.create(newExamAnalyticsBody);
+  const examAnalytics = await ExamAnalytics.create(newExamAnalyticsBody);
+
+  // Cache the new exam and its analytics
+  await Promise.all([
+    examService.setExam(newExam._id.toString(), newExam.toJSON()),
+    examService.setExamExists(newExam._id.toString(), true),
+    analyticsService.setAnalytics(
+      newExam._id.toString(),
+      examAnalytics.toJSON()
+    ),
+    // Clear the "all exams" cache since we've added a new exam
+    examService.clearExamCache(),
+  ]);
 
   res.status(201).json({
     status: "success",
