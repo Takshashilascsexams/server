@@ -2,12 +2,11 @@ import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
 import Question from "../../models/questions.models.js";
-import Exam from "../../models/exam.models.js";
-import User from "../../models/user.models.js";
 import mongoose from "mongoose";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import storage from "../../utils/multerConfig.js";
 import { checkExamExists, getUserId } from "../../utils/cachedDbQueries.js";
+import { questionService, examService } from "../../services/redisService.js";
 
 // Configure file filter - only allow JSON files
 const fileFilter = (req, file, cb) => {
@@ -234,6 +233,17 @@ const uploadBulkQuestions = catchAsync(async (req, res, next) => {
 
     await session.commitTransaction();
     session.endSession();
+
+    // Cache each inserted question and invalidate exam questions cache
+    const cachePromises = insertedQuestions.map((question) =>
+      questionService.setQuestion(question._id.toString(), question.toJSON())
+    );
+
+    // Add invalidation of the questions by exam cache
+    cachePromises.push(questionService.deleteQuestionsByExam(examId));
+
+    // Execute all cache operations in parallel
+    await Promise.all(cachePromises);
 
     // Send back minimal response to improve performance
     res.status(201).json({

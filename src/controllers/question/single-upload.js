@@ -1,6 +1,8 @@
+// src/controllers/question/single-upload.js
 import Question from "../../models/questions.models.js";
 import { AppError, catchAsync } from "../../utils/errorHandler.js";
 import { checkExamExists, getUserId } from "../../utils/cachedDbQueries.js";
+import { questionService } from "../../services/redisService.js";
 import {
   difficultyLevel as validDifficultyLevel,
   questionTypes,
@@ -133,6 +135,7 @@ const uploadSingleQuestion = catchAsync(async (req, res, next) => {
     subject,
     options,
     statements,
+    statementInstruction,
     hasNegativeMarking:
       hasNegativeMarking === "true" || hasNegativeMarking === true,
     negativeMarks: parseFloat(negativeMarks),
@@ -147,6 +150,15 @@ const uploadSingleQuestion = catchAsync(async (req, res, next) => {
   try {
     // Create the question
     const newQuestion = await Question.create(questionData);
+
+    // Cache the new question
+    await questionService.setQuestion(
+      newQuestion._id.toString(),
+      newQuestion.toJSON()
+    );
+
+    // Invalidate the questions by exam cache for this examId
+    await questionService.deleteQuestionsByExam(examId);
 
     // Send response
     res.status(201).json({
