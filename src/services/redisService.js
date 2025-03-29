@@ -92,6 +92,13 @@ const examService = {
   },
   setExamExists: async (examId, exists) =>
     set(examCache, `exists:${examId}`, exists, DEFAULT_TTL),
+
+  // Client methods for caching lists of latest test series
+  getLatestExams: async (category, limit) =>
+    get(examCache, `latest:${category}:${limit}`),
+  setLatestExams: async (category, limit, examsData, ttl = DEFAULT_TTL) =>
+    set(examCache, `latest:${category}:${limit}`, examsData, ttl),
+  clearLatestExamsCache: async () => clearPattern(examCache, "latest:*"),
 };
 
 // User specific cache methods

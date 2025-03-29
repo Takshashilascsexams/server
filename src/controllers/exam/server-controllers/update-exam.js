@@ -1,5 +1,5 @@
-import Exam from "../../models/exam.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
+import Exam from "../../../models/exam.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 
 const updateExam = catchAsync(async (req, res, next) => {
   const examId = req.params.id;

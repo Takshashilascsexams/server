@@ -1,6 +1,6 @@
-import Exam from "../../models/exam.models.js";
-import ExamAnalytics from "../../models/examAnalytics.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
+import Exam from "../../../models/exam.models.js";
+import ExamAnalytics from "../../../models/examAnalytics.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 
 const deleteExam = catchAsync(async (req, res, next) => {
   const examId = req.params.id;

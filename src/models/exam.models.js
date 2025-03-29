@@ -64,13 +64,23 @@ const ExamSchema = new mongoose.Schema(
     category: {
       type: String,
       enum: examCategory,
-      default: "Screening Test",
+      default: "TEST SERIES",
     },
-    tags: tags,
     allowNavigation: {
       type: Boolean,
       default: false,
     },
+    startTime: {
+      type: Date,
+    },
+    endTime: {
+      type: Date,
+    },
+    allowMultipleAttempts: {
+      type: Boolean,
+      default: false,
+    },
+    tags: tags,
     createdBy: {
       type: mongoose.Schema.ObjectId,
       ref: "User",

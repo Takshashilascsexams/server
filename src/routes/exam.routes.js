@@ -1,11 +1,17 @@
 import express from "express";
-import compressResponse from "../utils/compressResponse.js";
-import createExam from "../controllers/exam/create-exam.js";
-import updateExam from "../controllers/exam/update-exam.js";
-import updateExamStatus from "../controllers/exam/update-exam-status.js";
-import deleteExam from "../controllers/exam/delete-exam.js";
-import getAllExams from "../controllers/exam/get-all-exams.js";
-import getSingleExam from "../controllers/exam/get-single-exam.js";
+
+// Server controllers
+import createExam from "../controllers/exam/server-controllers/create-exam.js";
+import updateExam from "../controllers/exam/server-controllers/update-exam.js";
+import updateExamStatus from "../controllers/exam/server-controllers/update-exam-status.js";
+import deleteExam from "../controllers/exam/server-controllers/delete-exam.js";
+import getAllExams from "../controllers/exam/server-controllers/get-all-exams.js";
+import getSingleExam from "../controllers/exam/server-controllers/get-single-exam.js";
+
+// Client controllers
+import getLatestTestSeries from "../controllers/exam/client-controllers/get-latest-test-series.js";
+
+// Auth Middleware
 import {
   verifyUserIsSignedIn,
   verifyUserIsAdmin,
@@ -13,13 +19,15 @@ import {
 
 const router = express.Router();
 
-// Apply admin role validation to all routes
+router.get("/test-series", verifyUserIsSignedIn, getLatestTestSeries);
+
+// Apply admin role validation to server routes
 router.use(verifyUserIsSignedIn, verifyUserIsAdmin);
 
 // Exam CRUD operations
-router.get("/", compressResponse, getAllExams);
+router.get("/", getAllExams);
 router.post("/", createExam);
-router.get("/:id", compressResponse, getSingleExam);
+router.get("/:id", getSingleExam);
 router.put("/:id", updateExam);
 router.patch("/:id/status", updateExamStatus);
 router.delete("/:id", deleteExam);
