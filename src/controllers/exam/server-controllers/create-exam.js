@@ -1,8 +1,11 @@
-import Exam from "../../models/exam.models.js";
-import ExamAnalytics from "../../models/examAnalytics.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
-import { getUserId } from "../../utils/cachedDbQueries.js";
-import { examService, analyticsService } from "../../services/redisService.js";
+import Exam from "../../../models/exam.models.js";
+import ExamAnalytics from "../../../models/examAnalytics.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
+import { getUserId } from "../../../utils/cachedDbQueries.js";
+import {
+  examService,
+  analyticsService,
+} from "../../../services/redisService.js";
 
 const createExam = catchAsync(async (req, res, next) => {
   const {

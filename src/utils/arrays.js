@@ -55,8 +55,18 @@ export const districts = [
 
 // exam model utils arrays
 export const difficultyLevel = ["EASY", "MEDIUM", "HARD"];
-export const examCategory = ["Test Series", "Screening Test", "Other"];
-export const tags = ["Test Series", "Screening Test", "Other"];
+export const examCategory = [
+  "TEST SERIES",
+  "SCREENING TEST",
+  "SCHOLARSHIP TEST",
+  "OTHER",
+];
+export const tags = [
+  "TEST SERIES",
+  "SCREENING TEST",
+  "SCHOLARSHIP TEST",
+  "OTHER",
+];
 export const negativeMarkingValue = [0, 2.5, 0.5];
 
 // Question model types
