@@ -24,6 +24,13 @@ const updateExamStatus = catchAsync(async (req, res, next) => {
     return next(new AppError("No exam found with that ID", 404));
   }
 
+  // Clear cached data for this exam
+  await Promise.all([
+    examService.clearExamCache(),
+    examService.clearLatestExamsCache(),
+    examService.clearCategorizedExamsCache(),
+  ]);
+
   res.status(200).json({
     status: "success",
     data: {

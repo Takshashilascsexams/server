@@ -85,7 +85,11 @@ const examService = {
   setExam: async (examId, examData, ttl = DEFAULT_TTL) =>
     set(examCache, examId, examData, ttl),
   deleteExam: async (examId) => del(examCache, examId),
-  clearExamCache: async () => clearPattern(examCache, "*"),
+  clearExamCache: async () => {
+    await clearPattern(examCache, "*");
+    await clearPattern(examCache, "categorized:*");
+    await clearPattern(examCache, "latest:*");
+  },
   checkExamExists: async (examId) => {
     const exists = await get(examCache, `exists:${examId}`);
     return exists !== null ? exists : null;
@@ -99,6 +103,14 @@ const examService = {
   setLatestExams: async (category, limit, examsData, ttl = DEFAULT_TTL) =>
     set(examCache, `latest:${category}:${limit}`, examsData, ttl),
   clearLatestExamsCache: async () => clearPattern(examCache, "latest:*"),
+
+  // Client Methods for categorized exams
+  getCategorizedExams: async (page, limit) =>
+    get(examCache, `categorized:${page}:${limit}`),
+  setCategorizedExams: async (page, limit, examsData, ttl = DEFAULT_TTL) =>
+    set(examCache, `categorized:${page}:${limit}`, examsData, ttl),
+  clearCategorizedExamsCache: async () =>
+    clearPattern(examCache, "categorized:*"),
 };
 
 // User specific cache methods

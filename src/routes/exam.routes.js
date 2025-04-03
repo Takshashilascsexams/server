@@ -9,6 +9,7 @@ import getAllExams from "../controllers/exam/server-controllers/get-all-exams.js
 import getSingleExam from "../controllers/exam/server-controllers/get-single-exam.js";
 
 // Client controllers
+import getCategorizedExams from "../controllers/exam/client-controllers/get-categorized-exams.js";
 import getLatestTestSeries from "../controllers/exam/client-controllers/get-latest-test-series.js";
 
 // Auth Middleware
@@ -20,6 +21,7 @@ import {
 const router = express.Router();
 
 router.get("/test-series", verifyUserIsSignedIn, getLatestTestSeries);
+router.get("/categorized", verifyUserIsSignedIn, getCategorizedExams);
 
 // Apply admin role validation to server routes
 router.use(verifyUserIsSignedIn, verifyUserIsAdmin);
