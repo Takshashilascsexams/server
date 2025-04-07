@@ -9,6 +9,7 @@ import {
 
 const ExamSchema = new mongoose.Schema(
   {
+    // basic fields
     isActive: {
       type: Boolean,
       default: true,
@@ -64,7 +65,7 @@ const ExamSchema = new mongoose.Schema(
     category: {
       type: String,
       enum: examCategory,
-      default: "TEST SERIES",
+      default: "TEST_SERIES",
     },
     allowNavigation: {
       type: Boolean,
@@ -80,6 +81,32 @@ const ExamSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // payment fields
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    price: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    discountPrice: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    accessPeriod: {
+      type: Number,
+    },
+
+    // highlight
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+
     tags: tags,
     createdBy: {
       type: mongoose.Schema.ObjectId,

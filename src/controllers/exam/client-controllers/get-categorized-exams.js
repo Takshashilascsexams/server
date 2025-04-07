@@ -6,14 +6,14 @@ import { examCategory } from "../../../utils/arrays.js";
 const getCategorizedExams = catchAsync(async (req, res, next) => {
   // Get pagination parameters with defaults
   const page = req.query.page * 1 || 1;
-  const limit = req.query.limit * 1 || 6;
-  const skip = (page - 1) * limit;
+  const limit = req.query.limit * 1 || 10;
+  // const skip = (page - 1) * limit;
 
   // Try to get data from Redis cache first
-  const cacheKey = `categorized:${page}:${limit}`;
+  // const cacheKey = `categorized`;
 
   try {
-    const cachedData = await examService.getExam(cacheKey);
+    const cachedData = await examService.getCategorizedExams();
 
     if (cachedData) {
       return res.status(200).json({
@@ -41,23 +41,32 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
       categorizedExams[category] = [];
     });
 
+    // Also create a special FEATURED category for premium or featured exams
+    categorizedExams["FEATURED"] = [];
+
     // Get total count of active exams
     const total = await Exam.countDocuments(baseQuery);
 
     // Fetch all active exams with pagination
     const exams = await Exam.find(baseQuery)
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
+      // .skip(skip)
+      // .limit(limit)
       .select(
-        "title description category duration totalMarks difficultyLevel passMarkPercentage"
+        "title description category duration totalMarks difficultyLevel passMarkPercentage isFeatured isPremium price discountPrice"
       )
       .lean();
 
     // Group exams by category
     exams.forEach((exam) => {
+      // Add to original category
       if (categorizedExams[exam.category]) {
         categorizedExams[exam.category].push(exam);
+      }
+
+      // Also add to FEATURED array if premium or featured
+      if (exam.isPremium === true || exam.isFeatured === true) {
+        categorizedExams["FEATURED"].push(exam);
       }
     });
 
@@ -76,7 +85,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
 
     // Cache the result for 1 hr
     try {
-      await examService.setExam(cacheKey, responseData, 3600);
+      await examService.setCategorizedExams(responseData, 3600);
     } catch (cacheSetError) {
       console.error("Failed to cache categorized exams:", cacheSetError);
     }

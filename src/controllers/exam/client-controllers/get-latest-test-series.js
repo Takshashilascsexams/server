@@ -1,4 +1,3 @@
-// src/controllers/exam/client-controllers/get-latest-test-series.js
 import Exam from "../../../models/exam.models.js";
 import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { examService } from "../../../services/redisService.js";

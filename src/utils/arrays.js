@@ -56,9 +56,9 @@ export const districts = [
 // exam model utils arrays
 export const difficultyLevel = ["EASY", "MEDIUM", "HARD"];
 export const examCategory = [
-  "TEST SERIES",
-  "SCREENING TEST",
-  "SCHOLARSHIP TEST",
+  "TEST_SERIES",
+  "SCREENING_TEST",
+  "SCHOLARSHIP_TEST",
   "OTHER",
 ];
 export const tags = [

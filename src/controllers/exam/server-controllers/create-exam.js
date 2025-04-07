@@ -20,6 +20,11 @@ const createExam = catchAsync(async (req, res, next) => {
     difficultyLevel,
     category,
     allowNavigation,
+    isPremium,
+    price,
+    discountPrice,
+    accessPeriod,
+    isFeatured,
   } = req.body;
 
   if (
@@ -35,10 +40,29 @@ const createExam = catchAsync(async (req, res, next) => {
       difficultyLevel,
       category,
       allowNavigation,
+      isPremium,
+      price,
+      discountPrice,
+      accessPeriod,
+      isFeatured,
     ].some((value) => value === null || value === undefined)
   ) {
     return next(
       new AppError("Please provide all the fields for a new exam", 400)
+    );
+  }
+
+  // Validate premium exam has correct price
+  if (isPremium === true && (!price || parseFloat(price) <= 0)) {
+    return next(
+      new AppError("Premium exams must have a price greater than 0", 400)
+    );
+  }
+
+  // Validate discount price is less than regular price
+  if (discountPrice && parseFloat(discountPrice) >= parseFloat(price)) {
+    return next(
+      new AppError("Discount price must be less than regular price", 400)
     );
   }
 
@@ -60,6 +84,11 @@ const createExam = catchAsync(async (req, res, next) => {
     difficultyLevel,
     category,
     allowNavigation: allowNavigation === "Yes" ? true : false,
+    isPremium: isPremium === "Yes" ? true : false,
+    price: price ? parseFloat(price) : 0,
+    discountPrice: discountPrice ? parseFloat(discountPrice) : 0,
+    accessPeriod,
+    isFeatured: isFeatured === "Yes" ? true : false,
     createdBy: userId,
   };
 
