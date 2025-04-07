@@ -1,4 +1,3 @@
-// src/services/redisService.js
 import createRedisClient from "../utils/redisClient.js";
 
 // Create Redis clients with different prefixes for different data types
@@ -105,12 +104,11 @@ const examService = {
   clearLatestExamsCache: async () => clearPattern(examCache, "latest:*"),
 
   // Client Methods for categorized exams
-  getCategorizedExams: async (page, limit) =>
-    get(examCache, `categorized:${page}:${limit}`),
-  setCategorizedExams: async (page, limit, examsData, ttl = DEFAULT_TTL) =>
-    set(examCache, `categorized:${page}:${limit}`, examsData, ttl),
+  getCategorizedExams: async () => get(examCache, `categorized`),
+  setCategorizedExams: async (examsData, ttl = DEFAULT_TTL) =>
+    set(examCache, `categorized`, examsData, ttl),
   clearCategorizedExamsCache: async () =>
-    clearPattern(examCache, "categorized:*"),
+    clearPattern(examCache, "categorized"),
 };
 
 // User specific cache methods
