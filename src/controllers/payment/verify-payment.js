@@ -1,32 +1,49 @@
-// src/controllers/payment/verify-payment.js
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import Payment from "../../models/payment.models.js";
-import Razorpay from "razorpay"; // Example payment gateway
+import { getUserId } from "../../utils/cachedDbQueries.js";
+import { paymentService, examService } from "../../services/redisService.js";
 import crypto from "crypto";
 
 const verifyPayment = catchAsync(async (req, res, next) => {
-  const { paymentId, orderId, razorpaySignature } = req.body;
+  const {
+    paymentId,
+    orderId,
+    razorpaySignature,
+    razorpay_payment_id,
+    razorpay_order_id,
+    razorpay_signature,
+  } = req.body;
 
-  if (!paymentId || !orderId) {
+  const payment_id = paymentId || razorpay_payment_id;
+  const order_id = orderId || razorpay_order_id;
+  const signature = razorpaySignature || razorpay_signature;
+
+  if (!payment_id || !order_id) {
     return next(new AppError("Payment ID and Order ID are required", 400));
   }
 
   // Find the payment by transaction ID
   const payment = await Payment.findOne({
-    "paymentDetails.razorpayOrderId": orderId,
+    "paymentDetails.razorpayOrderId": order_id,
   });
 
   if (!payment) {
     return next(new AppError("Payment not found", 404));
   }
 
+  // Get user ID from token
+  const userId = await getUserId(req.user.sub);
+  if (!userId) {
+    return next(new AppError("User not found", 404));
+  }
+
   // Verify the Razorpay signature (security check)
   const generatedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-    .update(`${orderId}|${paymentId}`)
+    .createHmac("sha256", process.env.RAZORPAY_SECRET_KEY)
+    .update(`${order_id}|${payment_id}`)
     .digest("hex");
 
-  if (generatedSignature !== razorpaySignature) {
+  if (generatedSignature !== signature) {
     payment.status = "failed";
     await payment.save();
     return next(new AppError("Payment verification failed", 400));
@@ -36,10 +53,33 @@ const verifyPayment = catchAsync(async (req, res, next) => {
   payment.status = "completed";
   payment.paymentDetails = {
     ...payment.paymentDetails,
-    razorpayPaymentId: paymentId,
-    razorpaySignature,
+    razorpayPaymentId: payment_id,
+    razorpaySignature: signature,
   };
   await payment.save();
+
+  // IMPROVED APPROACH: Update the user's access cache instead of clearing it
+  let currentAccessMap = await paymentService.getUserExamAccess(
+    userId.toString()
+  );
+  if (!currentAccessMap) {
+    currentAccessMap = {};
+  }
+
+  // Add the new exam access
+  currentAccessMap[payment.examId.toString()] = true;
+
+  console.log("verify-payment:", currentAccessMap);
+
+  // Update the cache with the merged access rights
+  await paymentService.setUserExamAccess(
+    userId.toString(),
+    currentAccessMap,
+    5 * 60
+  );
+
+  // Still clear the categorized exams cache to force refresh of the UI
+  await examService.clearCategorizedExamsCache();
 
   res.status(200).json({
     status: "success",
