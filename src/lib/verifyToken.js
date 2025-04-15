@@ -7,8 +7,10 @@ const verifyToken = (req, res) => {
     return res.status(403).json({ message: "Token is required" });
   }
 
-  // Verify the token using Clerk's public key (you can retrieve Clerk's public key from their documentation or admin console)
-  const decodedToken = jwt.verify(token, process.env.CLERK_SECRET_KEY, {
+  const publicKey = process.env.CLERK_SECRET_KEY;
+
+  // Verify the token using Clerk's public key
+  const decodedToken = jwt.verify(token, publicKey, {
     algorithms: ["RS256"],
   });
 

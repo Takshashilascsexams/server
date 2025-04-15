@@ -21,7 +21,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
 
   try {
     // Check if we have cached data for this specific user
-    const cachedData = await examService.getCachedData(cacheKey);
+    const cachedData = await examService.getUserSpecificExamsCache(cacheKey);
 
     if (cachedData) {
       return res.status(200).json({
@@ -71,33 +71,38 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
     // If there are premium exams, check user's access
     let userAccessMap = {};
     if (premiumExamIds.length > 0) {
-      // Try to get from cache first
+      // Get the cached access map (for efficiency)
       userAccessMap = await paymentService.getUserExamAccess(userId);
 
-      // If not in cache or we need fresh data, query the database
-      if (!userAccessMap) {
-        const validPayments = await Payment.find({
-          userId,
-          examId: { $in: premiumExamIds },
-          status: "completed",
-          // Only check that validUntil is in the future or doesn't exist
-          $or: [
-            { validUntil: { $gt: new Date() } },
-            { validUntil: { $exists: false } },
-          ],
-        })
-          .select("examId")
-          .lean();
+      // ALWAYS query the database for verified payments, but limit to premium exams
+      const validPayments = await Payment.find({
+        userId,
+        examId: { $in: premiumExamIds },
+        status: "completed",
+        $or: [
+          { validUntil: { $gt: new Date() } },
+          { validUntil: { $exists: false } },
+        ],
+      })
+        .select("examId")
+        .lean();
 
-        // Create a map of exam IDs to access status
-        userAccessMap = {};
-        validPayments.forEach((payment) => {
-          userAccessMap[payment.examId.toString()] = true;
-        });
+      // Create a map of exam IDs to access status
+      const dbAccessMap = {};
+      validPayments.forEach((payment) => {
+        dbAccessMap[payment.examId.toString()] = true;
+      });
 
-        // Cache this access map for future requests (with a short TTL)
-        await paymentService.setUserExamAccess(userId, userAccessMap, 5 * 60); // 5 minute TTL
-      }
+      // Merge the cached map with the database results (database takes precedence)
+      userAccessMap = { ...userAccessMap, ...dbAccessMap };
+
+      // Update the cache with the merged results (longer TTL)
+      await paymentService.setUserExamAccess(
+        userId,
+        userAccessMap,
+        // 24 * 60 * 60
+        2 * 60
+      );
     }
 
     // Group exams by category and add hasAccess property
@@ -119,8 +124,6 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
       }
     });
 
-    console.log("categorized:", userAccessMap);
-
     // Prepare response data
     const responseData = {
       pagination: {
@@ -136,7 +139,11 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
 
     // Cache the result for 15 minutes (shorter TTL since it includes user-specific access data)
     try {
-      await examService.setCachedData(cacheKey, responseData, 15 * 60);
+      await examService.setUserSpecificExamsCache(
+        cacheKey,
+        responseData,
+        15 * 60
+      );
     } catch (cacheSetError) {
       console.error("Failed to cache categorized exams:", cacheSetError);
     }

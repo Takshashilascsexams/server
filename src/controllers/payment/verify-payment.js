@@ -69,17 +69,17 @@ const verifyPayment = catchAsync(async (req, res, next) => {
   // Add the new exam access
   currentAccessMap[payment.examId.toString()] = true;
 
-  console.log("verify-payment:", currentAccessMap);
-
   // Update the cache with the merged access rights
   await paymentService.setUserExamAccess(
     userId.toString(),
     currentAccessMap,
-    5 * 60
+    // 24 * 60 * 60 // cache access for 24 hrs
+    2 * 60 // cache access for 24 hrs
   );
 
-  // Still clear the categorized exams cache to force refresh of the UI
-  await examService.clearCategorizedExamsCache();
+  // IMPORTANT: Clear only the user-specific categorized exams cache
+  const cacheKey = `categorized:${userId.toString()}`;
+  await examService.clearUserSpecificExamsCache(cacheKey);
 
   res.status(200).json({
     status: "success",

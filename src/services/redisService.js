@@ -261,9 +261,14 @@ const examService = {
   deleteExam: async (examId) => del(examCache, examId),
 
   // Generic data caching methods for user-specific data
-  getCachedData: async (key) => get(examCache, key),
-  setCachedData: async (key, data, ttl = DEFAULT_TTL) =>
+  getUserSpecificExamsCache: async (key) => get(examCache, key),
+  setUserSpecificExamsCache: async (key, data, ttl = DEFAULT_TTL) =>
     set(examCache, key, data, ttl),
+  clearUserSpecificExamsCache: async (key) => del(examCache, key),
+  clearCategorizedExamsCache: async () => {
+    // Clear both generic and user-specific categorized exam caches
+    await clearPattern(examCache, "categorized:*");
+  },
 
   clearExamCache: async () => {
     await clearPattern(examCache, "*");
@@ -283,16 +288,6 @@ const examService = {
   setLatestExams: async (category, limit, examsData, ttl = DEFAULT_TTL) =>
     set(examCache, `latest:${category}:${limit}`, examsData, ttl),
   clearLatestExamsCache: async () => clearPattern(examCache, "latest:*"),
-
-  // Client Methods for categorized exams
-  getCategorizedExams: async () => get(examCache, `categorized`),
-  setCategorizedExams: async (examsData, ttl = DEFAULT_TTL) =>
-    set(examCache, `categorized`, examsData, ttl),
-  clearCategorizedExamsCache: async () => {
-    // Clear both generic and user-specific categorized exam caches
-    await clearPattern(examCache, "categorized");
-    await clearPattern(examCache, "categorized:*");
-  },
 };
 
 // User specific cache methods
