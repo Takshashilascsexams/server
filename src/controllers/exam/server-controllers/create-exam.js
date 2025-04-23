@@ -25,6 +25,8 @@ const createExam = catchAsync(async (req, res, next) => {
     discountPrice,
     accessPeriod,
     isFeatured,
+    isPartOfBundle = false,
+    bundleTag = "",
   } = req.body;
 
   if (
@@ -66,6 +68,10 @@ const createExam = catchAsync(async (req, res, next) => {
     );
   }
 
+  if (isPartOfBundle && !bundleTag) {
+    return next(new AppError("A bundle tag is required for bundle exams", 400));
+  }
+
   const userId = await getUserId(req.user.sub);
 
   if (!userId) {
@@ -90,6 +96,7 @@ const createExam = catchAsync(async (req, res, next) => {
     accessPeriod,
     isFeatured: isFeatured === "Yes" ? true : false,
     createdBy: userId,
+    bundleTags: [bundleTag],
   };
 
   // Create the test series

@@ -107,6 +107,13 @@ const ExamSchema = new mongoose.Schema(
       default: false,
     },
 
+    // Bundle support
+    bundleTags: {
+      type: [String],
+      default: [],
+      index: true,
+    },
+
     tags: tags,
     createdBy: {
       type: mongoose.Schema.ObjectId,

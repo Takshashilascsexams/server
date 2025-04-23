@@ -1,4 +1,3 @@
-// src/models/payment.models.js
 import mongoose from "mongoose";
 
 const paymentSchema = new mongoose.Schema(
@@ -9,7 +8,8 @@ const paymentSchema = new mongoose.Schema(
       required: true,
     },
     examId: {
-      type: mongoose.Schema.Types.ObjectId,
+      // type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Exam",
       required: true,
     },

@@ -62,10 +62,12 @@ export const examCategory = [
   "OTHER",
 ];
 export const tags = [
-  "TEST SERIES",
-  "SCREENING TEST",
-  "SCHOLARSHIP TEST",
-  "OTHER",
+  "TEST_SERIES",
+  "SCREENING_TEST",
+  "SCHOLARSHIP_TEST",
+  "UPSC",
+  "APSC",
+  "BUNDLE",
 ];
 export const negativeMarkingValue = [0, 2.5, 0.5];
 
