@@ -4,7 +4,7 @@ import { examService } from "../../../services/redisService.js";
 
 const getLatestTestSeriesExams = catchAsync(async (req, res, next) => {
   // Define constants for caching
-  const CATEGORY = "TEST SERIES";
+  const CATEGORY = "TEST_SERIES";
   const LIMIT = 3;
 
   let exams = null;

@@ -4,6 +4,10 @@ import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { examService, paymentService } from "../../../services/redisService.js";
 import { examCategory } from "../../../utils/arrays.js";
 import { getUserId } from "../../../utils/cachedDbQueries.js";
+import {
+  BUNDLE_DEFINITIONS,
+  createBundleFromExams,
+} from "../../../utils/bundleDefinitions.js";
 
 const getCategorizedExams = catchAsync(async (req, res, next) => {
   // Get pagination parameters with defaults
@@ -52,6 +56,9 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
     // Also create a special FEATURED category for premium or featured exams
     categorizedExams["FEATURED"] = [];
 
+    // Create a new BUNDLE category for grouped exams
+    categorizedExams["BUNDLE"] = [];
+
     // Get total count of active exams
     const total = await Exam.countDocuments(baseQuery);
 
@@ -59,7 +66,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
     const exams = await Exam.find(baseQuery)
       .sort({ createdAt: -1 })
       .select(
-        "title description category duration totalMarks difficultyLevel passMarkPercentage isFeatured isPremium price discountPrice accessPeriod"
+        "title description category duration totalMarks difficultyLevel passMarkPercentage isFeatured isPremium price discountPrice accessPeriod bundleTags"
       )
       .lean();
 
@@ -105,8 +112,45 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
       );
     }
 
+    // Create bundles based on bundle tags
+    const bundles = [];
+
+    // For each bundle definition, find exams with matching tags
+    BUNDLE_DEFINITIONS.forEach((bundleDef) => {
+      // Filter exams with this bundle tag
+      const examsWithTag = exams.filter(
+        (exam) => exam.bundleTags && exam.bundleTags.includes(bundleDef.tag)
+      );
+
+      // Only create the bundle if we have enough exams
+      const minExams = bundleDef.minExams || 2;
+      if (examsWithTag.length >= minExams) {
+        // Create a bundle using the helper function
+        const bundle = createBundleFromExams(
+          examsWithTag,
+          bundleDef,
+          userAccessMap
+        );
+        bundles.push(bundle);
+      }
+    });
+
+    // Sort bundles by priority
+    bundles.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
+    // Add bundles to the BUNDLE category
+    categorizedExams["BUNDLE"] = bundles;
+
     // Group exams by category and add hasAccess property
     exams.forEach((exam) => {
+      // Mark exams that are part of a bundle
+      bundles.forEach((bundle) => {
+        if (exam.bundleTags && exam.bundleTags.includes(bundle.bundleTag)) {
+          exam.isPartOfBundle = true;
+          exam.bundleId = bundle._id;
+        }
+      });
+
       // Convert _id to string for comparison
       const examId = exam._id.toString();
 
@@ -119,7 +163,10 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
       }
 
       // Also add to FEATURED array if premium or featured
-      if (exam.isPremium === true || exam.isFeatured === true) {
+      if (
+        (exam.isPremium === true || exam.isFeatured === true) &&
+        !exam.isPartOfBundle
+      ) {
         categorizedExams["FEATURED"].push(exam);
       }
     });

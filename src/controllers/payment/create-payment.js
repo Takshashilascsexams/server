@@ -1,13 +1,16 @@
-// src/controllers/payment/create-payment.js
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import { getUserId } from "../../utils/cachedDbQueries.js";
 import Exam from "../../models/exam.models.js";
 import Payment from "../../models/payment.models.js";
 import { v4 as uuidv4 } from "uuid";
-import Razorpay from "razorpay"; // Example payment gateway
+import Razorpay from "razorpay";
+import {
+  BUNDLE_DEFINITIONS,
+  createBundleFromExams,
+} from "../../utils/bundleDefinitions.js";
 
 const createPayment = catchAsync(async (req, res, next) => {
-  const { examId } = req.body;
+  const { examId, isBundle = false } = req.body;
 
   if (!examId) {
     return next(new AppError("Exam ID is required", 400));
@@ -15,38 +18,91 @@ const createPayment = catchAsync(async (req, res, next) => {
 
   // Get user ID from the request
   const userId = await getUserId(req.user.sub);
+
   if (!userId) {
     return next(new AppError("User not found", 404));
   }
 
-  // Find the exam
-  const exam = await Exam.findById(examId);
-  if (!exam) {
-    return next(new AppError("Exam not found", 404));
-  }
+  // Special handling for bundles
+  let exam;
+  let bundledExams = [];
 
-  // Check if the exam is premium
-  if (!exam.isPremium) {
-    return next(new AppError("This exam is not a premium exam", 400));
-  }
-
-  // Check if the user already has active access to this exam
-  const existingPayment = await Payment.findOne({
-    userId,
-    examId,
-    status: "completed",
-    validUntil: { $gt: new Date() },
-  });
-
-  if (existingPayment) {
-    return res.status(200).json({
-      status: "success",
-      message: "You already have access to this exam",
-      hasAccess: true,
-      data: {
-        payment: existingPayment,
-      },
+  if (isBundle) {
+    // First, check if this user already has access to this bundle
+    const existingBundlePayment = await Payment.findOne({
+      userId,
+      examId,
+      status: "completed",
+      validUntil: { $gt: new Date() },
+      "paymentDetails.isBundle": true,
     });
+
+    if (existingBundlePayment) {
+      return res.status(200).json({
+        status: "success",
+        message: "You already have access to this bundle",
+        hasAccess: true,
+        data: {
+          payment: existingBundlePayment,
+        },
+      });
+    }
+
+    // Find the bundle definition that matches this examId
+    const bundleDef = BUNDLE_DEFINITIONS.find((def) => def.id === examId);
+
+    if (!bundleDef) {
+      return next(new AppError("Invalid bundle ID", 400));
+    }
+
+    // Fetch all exams with the matching bundle tag
+    bundledExams = await Exam.find({
+      bundleTags: bundleDef.tag,
+      isActive: true,
+    })
+      .select("_id title price discountPrice duration totalMarks")
+      .lean();
+
+    if (bundledExams.length < (bundleDef.minExams || 2)) {
+      return next(
+        new AppError("Not enough exams available in this bundle", 404)
+      );
+    }
+
+    // Create a bundle object
+    const userAccessMap = {}; // Empty since we're checking for purchase, not displaying
+    exam = createBundleFromExams(bundledExams, bundleDef, userAccessMap);
+  } else {
+    // Find the individual exam
+    exam = await Exam.findById(examId);
+
+    if (!exam) {
+      return next(new AppError("Exam not found", 404));
+    }
+
+    // Check if the exam is premium
+    if (!exam.isPremium) {
+      return next(new AppError("This exam is not a premium exam", 400));
+    }
+
+    // Check if the user already has active access to this exam
+    const existingPayment = await Payment.findOne({
+      userId,
+      examId,
+      status: "completed",
+      validUntil: { $gt: new Date() },
+    });
+
+    if (existingPayment) {
+      return res.status(200).json({
+        status: "success",
+        message: "You already have access to this exam",
+        hasAccess: true,
+        data: {
+          payment: existingPayment,
+        },
+      });
+    }
   }
 
   // Calculate the final price (use discount price if available)
@@ -72,6 +128,7 @@ const createPayment = catchAsync(async (req, res, next) => {
     notes: {
       examId: examId,
       userId: userId.toString(),
+      isBundle: isBundle,
     },
   });
 
@@ -86,6 +143,9 @@ const createPayment = catchAsync(async (req, res, next) => {
     paymentMethod: "razorpay",
     paymentDetails: {
       razorpayOrderId: razorpayOrder.id,
+      isBundle: isBundle,
+      bundledExams: isBundle ? bundledExams.map((e) => e._id) : undefined,
+      bundleTag: isBundle ? exam.bundleTag : undefined,
     },
     // Calculate validUntil date (current date + access period days)
     validUntil: new Date(
@@ -95,11 +155,15 @@ const createPayment = catchAsync(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    message: "Payment initiated",
+    message: isBundle ? "Bundle payment initiated" : "Payment initiated",
     data: {
       payment,
       razorpayOrder,
       paymentUrl: `${process.env.RAZORPAY_CHECKOUT_URL}?order_id=${razorpayOrder.id}`,
+      isBundle,
+      bundledExams: isBundle
+        ? bundledExams.map((e) => ({ id: e._id, title: e.title }))
+        : undefined,
     },
   });
 });
