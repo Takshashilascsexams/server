@@ -18,7 +18,6 @@ const createPayment = catchAsync(async (req, res, next) => {
 
   // Get user ID from the request
   const userId = await getUserId(req.user.sub);
-
   if (!userId) {
     return next(new AppError("User not found", 404));
   }
@@ -50,7 +49,6 @@ const createPayment = catchAsync(async (req, res, next) => {
 
     // Find the bundle definition that matches this examId
     const bundleDef = BUNDLE_DEFINITIONS.find((def) => def.id === examId);
-
     if (!bundleDef) {
       return next(new AppError("Invalid bundle ID", 400));
     }

@@ -127,7 +127,7 @@ const createExam = catchAsync(async (req, res, next) => {
       examAnalytics.toJSON()
     ),
     // Clear the "all exams" cache since we've added a new exam
-    examService.clearExamCache(),
+    // examService.clearExamCache(),
     examService.clearLatestExamsCache(),
     examService.clearCategorizedExamsCache(),
   ]);
