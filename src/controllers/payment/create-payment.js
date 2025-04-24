@@ -73,7 +73,6 @@ const createPayment = catchAsync(async (req, res, next) => {
   } else {
     // Find the individual exam
     exam = await Exam.findById(examId);
-
     if (!exam) {
       return next(new AppError("Exam not found", 404));
     }
