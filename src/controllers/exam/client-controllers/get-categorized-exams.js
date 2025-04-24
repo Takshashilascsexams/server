@@ -107,8 +107,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
       await paymentService.setUserExamAccess(
         userId,
         userAccessMap,
-        // 24 * 60 * 60
-        2 * 60
+        24 * 60 * 60 // cache exams access for 24hrs
       );
     }
 
