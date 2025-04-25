@@ -189,7 +189,7 @@ const verifyPayment = catchAsync(async (req, res, next) => {
     await paymentService.setUserExamAccess(
       userId.toString(),
       currentAccessMap,
-      24 * 60 * 60 // cache access for 24 hrs
+      15 * 60 // cache access for 15 mins
     );
 
     // IMPORTANT: Clear only the user-specific categorized exams cache
