@@ -23,6 +23,7 @@ import { checkHealth } from "./services/redisService.js";
 import examRoute from "./routes/exam.routes.js";
 import questionsRoute from "./routes/question.routes.js";
 import paymentRoute from "./routes/payment.routes.js";
+import bundleExamRoute from "./routes/bundle-exam.routes.js";
 
 dotenv.config();
 
@@ -132,6 +133,7 @@ app.get("/", (req, res) => {
 app.use("/api/v1/exam", examRoute);
 app.use("/api/v1/questions", questionsRoute);
 app.use("/api/v1/payments", paymentRoute);
+app.use("/api/v1/bundle-exam", bundleExamRoute);
 
 // Handle undefined routes
 app.all("*", (req, res, next) => {

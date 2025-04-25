@@ -114,6 +114,15 @@ const examService = {
   setLatestExams: async (category, limit, examsData, ttl = DEFAULT_TTL) =>
     set(examCache, `latest:${category}:${limit}`, examsData, ttl),
   clearLatestExamsCache: async () => clearPattern(examCache, "latest:*"),
+
+  // Bundle-specific methods
+  getBundleCache: async (bundleId, userId) =>
+    get(examCache, `bundle:${bundleId}:${userId}`),
+  setBundleCache: async (bundleId, userId, bundleData, ttl = 15 * 60) =>
+    set(examCache, `bundle:${bundleId}:${userId}`, bundleData, ttl),
+  clearBundleCache: async (bundleId) =>
+    clearPattern(examCache, `bundle:${bundleId}:*`),
+  clearAllBundleCache: async () => clearPattern(examCache, `bundle:*`),
 };
 
 // User specific cache methods
