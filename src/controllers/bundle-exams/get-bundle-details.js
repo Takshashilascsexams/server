@@ -4,7 +4,6 @@ import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import { getUserId } from "../../utils/cachedDbQueries.js";
 import { examService, paymentService } from "../../services/redisService.js";
 import { BUNDLE_DEFINITIONS } from "../../utils/bundleDefinitions.js";
-import mongoose from "mongoose";
 
 /**
  * Controller to fetch a bundle and its bundled exams
@@ -25,9 +24,6 @@ const getBundleDetails = catchAsync(async (req, res, next) => {
   if (!userId) {
     return next(new AppError("User not found", 404));
   }
-
-  // Create a bundle-specific cache key
-  // const cacheKey = `${bundleId}${userId}`;
 
   try {
     // Try to get bundle data from cache first
@@ -64,6 +60,10 @@ const getBundleDetails = catchAsync(async (req, res, next) => {
     }).lean();
 
     const hasAccess = !!bundleAccess;
+
+    if (!hasAccess) {
+      return next(new AppError("Access denied for this bundle", 401));
+    }
 
     // Fetch all exams with the bundle tag
     const bundledExams = await Exam.find({
