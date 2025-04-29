@@ -158,6 +158,48 @@ const questionService = {
   clearQuestionCache: async () => clearPattern(questionCache, "*"),
 };
 
+// Exam attempt specific cache methods
+const attemptService = {
+  // Get attempt from cache
+  getAttempt: async (attemptId) => get(examCache, `attempt:${attemptId}`),
+
+  // Set attempt in cache
+  setAttempt: async (attemptId, attemptData, ttl = DEFAULT_TTL) =>
+    set(examCache, `attempt:${attemptId}`, attemptData, ttl),
+
+  // Delete attempt from cache
+  deleteAttempt: async (attemptId) => del(examCache, `attempt:${attemptId}`),
+
+  // Get user's attempts by examId
+  getUserAttemptsByExam: async (userId, examId) =>
+    get(examCache, `attempts:user:${userId}:exam:${examId}`),
+
+  // Set user's attempts by examId
+  setUserAttemptsByExam: async (userId, examId, attemptsData, ttl = 5 * 60) =>
+    set(examCache, `attempts:user:${userId}:exam:${examId}`, attemptsData, ttl),
+
+  // Get exam rankings
+  getExamRankings: async (examId) => get(examCache, `rankings:${examId}`),
+
+  // Set exam rankings
+  setExamRankings: async (examId, rankingsData, ttl = 60 * 60) =>
+    set(examCache, `rankings:${examId}`, rankingsData, ttl),
+
+  // Clear all user attempts cache
+  clearUserAttempts: async (userId) =>
+    clearPattern(examCache, `attempts:user:${userId}:*`),
+
+  // Clear exam rankings cache
+  clearExamRankings: async (examId) => del(examCache, `rankings:${examId}`),
+
+  // Get exam rules
+  getExamRules: async (examId) => get(examCache, `rules:${examId}`),
+
+  // Set exam rules
+  setExamRules: async (examId, rulesData, ttl = 24 * 60 * 60) =>
+    set(examCache, `rules:${examId}`, rulesData, ttl),
+};
+
 // Analytics specific cache methods
 const analyticsService = {
   getAnalytics: async (examId) => get(analyticsCache, examId),
