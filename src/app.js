@@ -24,6 +24,7 @@ import examRoute from "./routes/exam.routes.js";
 import questionsRoute from "./routes/question.routes.js";
 import paymentRoute from "./routes/payment.routes.js";
 import bundleExamRoute from "./routes/bundle-exam.routes.js";
+import examAttemptRoute from "./routes/exam-attempt.routes.js";
 
 dotenv.config();
 
@@ -134,6 +135,7 @@ app.use("/api/v1/exam", examRoute);
 app.use("/api/v1/questions", questionsRoute);
 app.use("/api/v1/payments", paymentRoute);
 app.use("/api/v1/bundle-exam", bundleExamRoute);
+app.use("/api/v1/exam-attempts", examAttemptRoute);
 
 // Handle undefined routes
 app.all("*", (req, res, next) => {
