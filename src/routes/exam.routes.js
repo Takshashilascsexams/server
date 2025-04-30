@@ -18,13 +18,43 @@ import {
   verifyUserIsAdmin,
 } from "../middleware/authMiddleware.js";
 
+// Rate limiting
+import { createRateLimiter } from "../middleware/rateLimiterMiddleware.js";
+
 const router = express.Router();
 
-router.get("/test-series", verifyUserIsSignedIn, getLatestTestSeries);
-router.get("/categorized", verifyUserIsSignedIn, getCategorizedExams);
+// Create a specific rate limiter for client exam endpoints
+const clientExamLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per minute
+  keyPrefix: "client-exam",
+  message: "Too many exam requests. Please wait before trying again.",
+});
 
-// Apply admin role validation to server routes
-router.use(verifyUserIsSignedIn, verifyUserIsAdmin);
+// Client routes with rate limiting
+router.get(
+  "/test-series",
+  verifyUserIsSignedIn,
+  clientExamLimiter,
+  getLatestTestSeries
+);
+router.get(
+  "/categorized",
+  verifyUserIsSignedIn,
+  clientExamLimiter,
+  getCategorizedExams
+);
+
+// Create a specific rate limiter for admin exam operations
+const adminExamLimiter = createRateLimiter({
+  windowMs: 2 * 60 * 1000, // 2 minutes
+  max: 20, // 20 requests per 2 minutes
+  keyPrefix: "admin-exam",
+  message: "Too many admin exam operations. Please wait before trying again.",
+});
+
+// Apply admin role validation and rate limiting to server routes
+router.use(verifyUserIsSignedIn, verifyUserIsAdmin, adminExamLimiter);
 
 // Exam CRUD operations
 router.get("/", getAllExams);
