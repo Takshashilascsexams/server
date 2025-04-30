@@ -6,7 +6,6 @@ import helmet from "helmet";
 import morgan from "morgan";
 import mongoSanitize from "express-mongo-sanitize";
 import xss from "xss-clean";
-import rateLimit from "express-rate-limit";
 import hpp from "hpp";
 import path from "path";
 import fs from "fs";
@@ -15,6 +14,7 @@ import mongoose from "mongoose";
 // middlewares utilities functions
 import compressResponse from "./utils/compressResponse.js";
 import { AppError, errorController } from "./utils/errorHandler.js";
+import { apiLimiter } from "./middleware/rateLimiterMiddleware.js"; // Import the general API rate limiter
 
 // services
 import { checkHealth } from "./services/redisService.js";
@@ -72,13 +72,8 @@ app.use(helmet());
 // Development logging
 app.use(morgan("tiny"));
 
-// Limit requests from same IP
-const limiter = rateLimit({
-  max: 100,
-  windowMs: 60 * 60 * 1000,
-  message: "Too many requests from this IP, please try again in an hour!",
-});
-app.use("/api", limiter);
+// Apply global rate limiter to all routes
+app.use(apiLimiter);
 
 // Body parser, reading data from body into req.body
 app.use(express.json({ limit: "10mb" }));
@@ -107,7 +102,7 @@ app.use((req, res, next) => {
 
 // 2) ROUTES
 // Public route
-// Health check route
+// Health check route (exempted from rate limiting)
 app.get("/health", async (req, res) => {
   const mongoStatus = mongoose.connection.readyState === 1;
   const redisStatus = await checkHealth();
