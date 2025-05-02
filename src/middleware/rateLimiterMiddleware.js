@@ -1,136 +1,199 @@
+// src/middleware/rateLimiterMiddleware.js - Fixed for compatibility with newer express-rate-limit version
 import rateLimit from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
 import createRedisClient from "../utils/redisClient.js";
+import cluster from "cluster";
+import os from "os";
 
-// Create Redis client for rate limiting with dedicated prefix
+// Create dedicated Redis client for rate limiting
 const rateLimitRedis = createRedisClient("ratelimit:");
 
+// Function to get dynamic limits based on server load
+const getDynamicLimits = () => {
+  // Get current system CPU load
+  const cpuLoad = os.loadavg()[0];
+  const cpuCount = os.cpus().length;
+  const cpuUsage = cpuLoad / cpuCount;
+
+  // Adjust limits based on current CPU load
+  // Lower limits when system is under heavy load
+  const loadFactor = Math.max(0.5, 1 - cpuUsage);
+
+  return {
+    apiMax: Math.floor(1000 * loadFactor), // up to 1000 requests per minute
+    authMax: Math.floor(100 * loadFactor), // up to 100 auth requests per 15 min
+    examAttemptMax: Math.floor(200 * loadFactor), // up to 200 exam attempts per minute
+    saveAnswerMax: Math.floor(1500 * loadFactor), // up to 1500 answer saves per minute
+  };
+};
+
 /**
- * Create a rate limiter middleware with specified options
- * @param {Object} options - Configuration options
- * @param {number} options.windowMs - Time window in milliseconds
- * @param {number} options.max - Maximum requests per windowMs
- * @param {string} options.keyPrefix - Prefix for Redis keys
- * @param {string} options.message - Error message
- * @param {number} options.statusCode - HTTP status code for rate limit exceeded
- * @returns {Function} Express middleware
+ * Create a rate limiter middleware with specified options and dynamic scaling
  */
 export const createRateLimiter = (options = {}) => {
   const {
     windowMs = 60 * 1000, // Default: 1 minute
-    max = 100, // Default: 100 requests per minute
+    max = null, // Will use dynamic limits if null
     keyPrefix = "general",
     message = "Too many requests, please try again later.",
     statusCode = 429,
   } = options;
 
-  // Create the rate limiter
+  // Determine which limit to use
+  const getLimitForRequest = (req) => {
+    const dynamicLimits = getDynamicLimits();
+
+    switch (keyPrefix) {
+      case "api":
+        return dynamicLimits.apiMax;
+      case "auth":
+        return dynamicLimits.authMax;
+      case "exam-attempt":
+        return dynamicLimits.examAttemptMax;
+      case "save-answer":
+        return dynamicLimits.saveAnswerMax;
+      default:
+        return max || 100;
+    }
+  };
+
+  // Create the rate limiter with Redis store for distributed access
   const limiter = rateLimit({
     windowMs,
-    max,
-    standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    max: getLimitForRequest,
+    standardHeaders: "draft-6", // Updated from draft_polli_ratelimit_headers to standardHeaders
+    legacyHeaders: false,
 
-    // Use Redis as store when in production, memory store in development
-    store:
-      process.env.NODE_ENV === "production"
-        ? new RedisStore({
-            sendCommand: (...args) => rateLimitRedis.call(...args),
-            prefix: `${keyPrefix}:`,
-          })
-        : null,
+    // Use Redis as store for distributed rate limiting
+    store: new RedisStore({
+      sendCommand: (...args) => rateLimitRedis.call(...args),
+      prefix: `${keyPrefix}:`,
+      // Make sure to handle Redis connection issues gracefully
+      resetExpiryOnChange: true,
+      // Expire keys for cleanup
+      expiry: windowMs / 1000,
+    }),
 
     // Custom handler for rate limited requests
     handler: (req, res, next, options) => {
+      // Log rate limiting events
+      console.warn(
+        `Rate limit exceeded: ${req.ip} ${req.method} ${req.originalUrl}`
+      );
+
       res.status(statusCode).json({
         status: "error",
         message: message,
+        retryAfter: Math.ceil(windowMs / 1000),
       });
     },
 
-    // Define key generator based on IP and user ID if available
+    // Define key generator with failover if user ID not available
     keyGenerator: (req, res) => {
+      // Try multiple identifiers to handle various authentication states
       const userId = req.user?.sub || req.user?._id || "";
       const ip =
         req.ip ||
         req.headers["x-forwarded-for"] ||
+        req.headers["x-real-ip"] ||
         req.socket.remoteAddress ||
-        "";
-      return `${keyPrefix}:${userId}:${ip}`;
+        "unknown";
+
+      // If we have user ID, use a combination for better accuracy
+      if (userId) {
+        return `${keyPrefix}:${userId}:${ip.split(",")[0].trim()}`;
+      }
+
+      // Fallback to IP-only for unauthenticated requests
+      return `${keyPrefix}:ip:${ip.split(",")[0].trim()}`;
     },
 
-    // Skip rate limiting for certain paths or methods
+    // Skip rate limiting for certain paths
     skip: (req, res) => {
       // Skip rate limiting for health checks and OPTIONS requests
-      return req.path === "/health" || req.method === "OPTIONS";
+      return (
+        req.path === "/health" ||
+        req.path === "/readiness" ||
+        req.method === "OPTIONS"
+      );
     },
   });
 
-  // Create a wrapped middleware that adds logging when limit is reached
+  // Create a wrapped middleware that scales dynamically
   return (req, res, next) => {
-    // Get current limit count
+    // Implement graceful degradation for extreme load
+    const cpuLoad = os.loadavg()[0];
+    const cpuCount = os.cpus().length;
+    const loadPercentage = (cpuLoad / cpuCount) * 100;
+
+    // If system is under extreme load, throttle non-essential requests
+    if (
+      loadPercentage > 85 &&
+      keyPrefix !== "save-answer" &&
+      keyPrefix !== "exam-attempt"
+    ) {
+      if (Math.random() > 0.7) {
+        // Randomly throttle 30% of non-essential requests
+        return res.status(503).json({
+          status: "error",
+          message: "Server is under heavy load. Please try again shortly.",
+          retryAfter: 5,
+        });
+      }
+    }
+
+    // Apply normal rate limiting
     limiter(req, res, (err) => {
       if (err) {
         return next(err);
       }
-
-      // If limit was just reached (remaining = 0), log it
-      // The RateLimit-Remaining header is typically available on res.get('RateLimit-Remaining')
-      // but the library may also store it in req
-      const remaining =
-        res.get("RateLimit-Remaining") || req.rateLimit?.remaining;
-      if (remaining === "0" || remaining === 0) {
-        console.warn(
-          `Rate limit reached: ${req.ip} ${req.method} ${req.originalUrl}`
-        );
-        // Could log to security monitoring system here
-      }
-
       next();
     });
   };
 };
 
-// Standard API rate limiter for general API endpoints
+// Enhanced rate limiters for different routes
 export const apiLimiter = createRateLimiter({
   windowMs: 60 * 1000, // 1 minute
-  max: 200, // 200 requests per minute
   keyPrefix: "api",
+  message: "Too many API requests. Please wait before trying again.",
 });
 
-// Stricter rate limiter for authentication endpoints
+// Authentication limiter - more strict to prevent brute force
 export const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // 30 attempts per 15 minutes
   keyPrefix: "auth",
   message:
-    "Too many authentication attempts, please try again after 15 minutes.",
-  statusCode: 429,
+    "Too many authentication attempts. Please try again after 15 minutes.",
 });
 
-// Stricter rate limiter for payment endpoints
+// Special limiter for exam attempts - higher limits
+export const examAttemptLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  keyPrefix: "exam-attempt",
+  message: "Too many exam operations. Please wait a moment before continuing.",
+});
+
+// Special limiter just for saving answers - very high limits
+export const saveAnswerLimiter = createRateLimiter({
+  windowMs: 10 * 1000, // 10 seconds
+  keyPrefix: "save-answer",
+  message: "You're answering questions too quickly. Please wait a moment.",
+});
+
+// Payment limiter remains more strict for security
 export const paymentLimiter = createRateLimiter({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 15, // 15 payment requests per 10 minutes
+  max: 30, // Lower fixed limit for payment operations
   keyPrefix: "payment",
-  message: "Too many payment requests, please try again later.",
-  statusCode: 429,
+  message: "Too many payment requests. Please try again later.",
 });
 
-// Rate limiter for user operations like registration, profile updates
-export const userLimiter = createRateLimiter({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // 20 requests per hour
-  keyPrefix: "user",
-  message: "Too many user operations, please try again later.",
-  statusCode: 429,
-});
-
-// Apply appropriate rate limiters to routes
 export default {
   apiLimiter,
   authLimiter,
+  examAttemptLimiter,
+  saveAnswerLimiter,
   paymentLimiter,
-  userLimiter,
-  createRateLimiter, // Export factory function for custom limiters
+  createRateLimiter,
 };
