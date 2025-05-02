@@ -1,3 +1,4 @@
+// src/controllers/exam-attempt/start-exam.js - Optimized for high concurrency
 import ExamAttempt from "../../models/examAttempt.models.js";
 import Exam from "../../models/exam.models.js";
 import Question from "../../models/questions.models.js";
@@ -8,10 +9,7 @@ import { examService, questionService } from "../../services/redisService.js";
 
 /**
  * Controller to start a new exam attempt
- * 1. Validates if user has access to the exam
- * 2. Checks if there are any existing in-progress attempts
- * 3. Creates a new attempt record
- * 4. Returns exam details with shuffled questions and options
+ * Optimized for 1000+ concurrent users
  */
 const startExam = catchAsync(async (req, res, next) => {
   const { examId } = req.params;
@@ -20,29 +18,91 @@ const startExam = catchAsync(async (req, res, next) => {
     return next(new AppError("Exam ID is required", 400));
   }
 
-  // Get user ID from token
+  // Get user ID from token with caching
   const userId = await getUserId(req.user.sub);
   if (!userId) {
     return next(new AppError("User not found", 404));
   }
 
-  // Check if exam exists (use cache if available)
+  // Generate cache keys
+  const examCacheKey = `exam:${examId}`;
+  const questionsCacheKey = `exam:${examId}:questions`;
+  const accessCacheKey = `access:${userId}:${examId}`;
+  const attemptCacheKey = `attempt:${userId}:${examId}:active`;
+
+  // Use a multi-phase approach to reduce database load
   let exam;
+  let questions;
+  let hasAccess = false;
+  let existingAttempt;
+
+  // Phase 1: Check for an existing attempt in cache first
   try {
-    const cachedExam = await examService.getExam(examId);
-    if (cachedExam) {
-      exam = cachedExam;
-    } else {
-      exam = await Exam.findById(examId);
+    // Check if user already has an active attempt
+    existingAttempt = await examService.examCache.get(attemptCacheKey);
+    if (existingAttempt) {
+      try {
+        existingAttempt = JSON.parse(existingAttempt);
+
+        // Verify the attempt still exists in the database
+        const attemptExists = await ExamAttempt.exists({
+          _id: existingAttempt.attemptId,
+          userId,
+          examId,
+          status: "in-progress",
+        });
+
+        if (attemptExists) {
+          return res.status(200).json({
+            status: "success",
+            message: "Continuing existing attempt",
+            data: {
+              attemptId: existingAttempt.attemptId,
+              timeRemaining:
+                existingAttempt.timeRemaining ||
+                existingAttempt.examDuration * 60,
+              resuming: true,
+            },
+          });
+        }
+      } catch (error) {
+        // Invalid cache data, will proceed to create new attempt
+        console.error("Error parsing existing attempt:", error);
+      }
+    }
+  } catch (error) {
+    console.error("Error checking existing attempt:", error);
+    // Continue with normal flow if cache check fails
+  }
+
+  // Phase 2: Get exam data - use cache first approach
+  try {
+    // Try to get from Redis cache first
+    exam = await examService.getExam(examId);
+    if (!exam) {
+      // Cache miss - get from database with optimized projection
+      exam = await Exam.findById(examId)
+        .select(
+          "title description isActive isPremium duration totalQuestions totalMarks"
+        )
+        .lean();
+
       if (!exam) {
         return next(new AppError("Exam not found", 404));
       }
-      // Cache the exam for future requests
+
+      // Cache for future requests
       await examService.setExam(examId, exam);
     }
   } catch (error) {
-    console.error("Error fetching exam:", error);
-    exam = await Exam.findById(examId);
+    console.error("Error fetching exam data:", error);
+    // Fallback to database
+    exam = await Exam.findById(examId)
+      .select(
+        "title description isActive isPremium duration totalQuestions totalMarks"
+      )
+      .lean();
+
     if (!exam) {
       return next(new AppError("Exam not found", 404));
     }
@@ -53,59 +113,118 @@ const startExam = catchAsync(async (req, res, next) => {
     return next(new AppError("This exam is not currently active", 400));
   }
 
-  // Check if user has access to the exam (for premium exams)
+  // Phase 3: Check if user has access to the exam (for premium exams)
   if (exam.isPremium) {
-    // Use existing check-access controller
-    req.params = { examId };
-    const access = await checkExamAccess(req, {}, (error) => {
-      if (error) return next(error);
-    });
+    try {
+      // Try to get access status from cache
+      const cachedAccess = await examService.examCache.get(accessCacheKey);
+      if (cachedAccess !== null) {
+        hasAccess = cachedAccess === "true";
+      } else {
+        // Cache miss - check access via controller
+        req.params = { examId };
+        const accessResult = await checkExamAccess(req, {}, (error) => {
+          if (error) throw error;
+        });
 
-    if (!access.data.hasAccess) {
+        hasAccess = accessResult.data.hasAccess;
+
+        // Cache for future requests (short TTL to maintain freshness)
+        await examService.examCache.set(
+          accessCacheKey,
+          hasAccess ? "true" : "false",
+          "EX",
+          5 * 60
+        );
+      }
+    } catch (error) {
+      console.error("Error checking exam access:", error);
+      // Fallback to direct controller call
+      req.params = { examId };
+      try {
+        const accessResult = await checkExamAccess(req, {}, (error) => {
+          if (error) throw error;
+        });
+        hasAccess = accessResult.data.hasAccess;
+      } catch (accessError) {
+        return next(new AppError("Failed to verify exam access", 500));
+      }
+    }
+
+    if (!hasAccess) {
       return next(
         new AppError("You don't have access to this premium exam", 403)
       );
     }
   }
 
-  // Check if there's an existing in-progress attempt
-  const existingAttempt = await ExamAttempt.findOne({
+  // Phase 4: Check for existing in-progress attempt in database
+  existingAttempt = await ExamAttempt.findOne({
     userId,
     examId,
     status: "in-progress",
-  });
+  })
+    .select("_id timeRemaining")
+    .lean();
 
   if (existingAttempt) {
+    // Cache the existing attempt for future requests
+    try {
+      await examService.examCache.set(
+        attemptCacheKey,
+        JSON.stringify({
+          attemptId: existingAttempt._id,
+          timeRemaining: existingAttempt.timeRemaining,
+          examDuration: exam.duration,
+        }),
+        "EX",
+        exam.duration * 60 // TTL matches exam duration
+      );
+    } catch (error) {
+      console.error("Error caching existing attempt:", error);
+    }
+
     return res.status(200).json({
       status: "success",
       message: "Continuing existing attempt",
       data: {
         attemptId: existingAttempt._id,
-        timeRemaining: existingAttempt.timeRemaining || exam.duration * 60, // in seconds
+        timeRemaining: existingAttempt.timeRemaining || exam.duration * 60,
         resuming: true,
       },
     });
   }
 
-  // Get questions for the exam (use cache if available)
-  let questions;
+  // Phase 5: Get questions - try cache first approach with optimized fields
   try {
+    // Try to get from Redis cache first
     questions = await questionService.getQuestionsByExam(examId);
-    if (!questions) {
-      questions = await Question.find({ examId, isActive: true })
-        .select(
-          "questionText type options statements statementInstruction marks hasNegativeMarking negativeMarks"
-        )
+    if (!questions || questions.length === 0) {
+      // Cache miss - get from database with optimized projection
+      questions = await Question.find({
+        examId,
+        isActive: true,
+      })
+        .select("_id marks hasNegativeMarking negativeMarks")
         .lean();
-      // Cache the questions for future requests
-      await questionService.setQuestionsByExam(examId, questions);
+
+      if (questions.length > 0) {
+        // Cache for future requests - do this in the background
+        setTimeout(() => {
+          questionService
+            .setQuestionsByExam(examId, questions)
+            .catch((error) => console.error("Error caching questions:", error));
+        }, 0);
+      }
     }
   } catch (error) {
     console.error("Error fetching questions:", error);
-    questions = await Question.find({ examId, isActive: true })
-      .select(
-        "questionText type options statements statementInstruction marks hasNegativeMarking negativeMarks"
-      )
+    // Fallback to database
+    questions = await Question.find({
+      examId,
+      isActive: true,
+    })
+      .select("_id marks hasNegativeMarking negativeMarks")
       .lean();
   }
 
@@ -123,50 +242,80 @@ const startExam = catchAsync(async (req, res, next) => {
     );
   }
 
-  // Select random questions up to totalQuestions if we have more than needed
+  // Select random questions - use Fisher-Yates shuffle for efficiency
   let selectedQuestions = questions;
   if (questions.length > exam.totalQuestions) {
-    selectedQuestions = [];
-    const questionIndices = new Set();
+    // Efficient random selection without duplicates
+    const indices = Array.from({ length: questions.length }, (_, i) => i);
 
-    // Create a random set of indices
-    while (questionIndices.size < exam.totalQuestions) {
-      const randomIndex = Math.floor(Math.random() * questions.length);
-      questionIndices.add(randomIndex);
+    // Fisher-Yates shuffle
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
     }
 
-    // Select questions based on the random indices
-    questionIndices.forEach((index) => {
-      selectedQuestions.push(questions[index]);
-    });
+    // Take first n elements
+    const selectedIndices = indices.slice(0, exam.totalQuestions);
+    selectedQuestions = selectedIndices.map((i) => questions[i]);
   }
 
-  // Shuffle the selected questions
-  selectedQuestions = selectedQuestions.sort(() => Math.random() - 0.5);
+  // Create a new attempt record with optimized fields
+  const startTime = new Date();
+  const timeRemaining = exam.duration * 60; // seconds
 
   // Create a new attempt record
   const newAttempt = await ExamAttempt.create({
     userId,
     examId,
-    startTime: new Date(),
+    startTime,
     status: "in-progress",
-    timeRemaining: exam.duration * 60, // Convert minutes to seconds
+    timeRemaining,
+    // Only store essential data in answers array
     answers: selectedQuestions.map((q) => ({
       questionId: q._id,
       selectedOption: null,
       isCorrect: null,
       marksEarned: 0,
       negativeMarks: 0,
+      responseTime: 0,
     })),
     unattempted: selectedQuestions.length,
   });
+
+  // Cache the new attempt for future requests
+  try {
+    await examService.examCache.set(
+      attemptCacheKey,
+      JSON.stringify({
+        attemptId: newAttempt._id,
+        timeRemaining,
+        examDuration: exam.duration,
+        createdAt: startTime.getTime(),
+      }),
+      "EX",
+      exam.duration * 120 // 2x exam duration as safety margin
+    );
+  } catch (error) {
+    console.error("Error caching new attempt:", error);
+  }
+
+  // Prefetch full question details in background for this exam
+  try {
+    setTimeout(() => {
+      questionService
+        .prefetchQuestionsForExam(examId, selectedQuestions)
+        .catch((error) => console.error("Error prefetching questions:", error));
+    }, 0);
+  } catch (error) {
+    console.error("Error scheduling question prefetch:", error);
+  }
 
   // Return minimal information to start the exam
   res.status(201).json({
     status: "success",
     data: {
       attemptId: newAttempt._id,
-      timeRemaining: exam.duration * 60, // in seconds
+      timeRemaining,
       resuming: false,
     },
   });

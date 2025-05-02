@@ -48,7 +48,7 @@ const getAttemptResult = catchAsync(async (req, res, next) => {
   const questionIds = attempt.answers.map((a) => a.questionId);
   const questions = await Question.find({ _id: { $in: questionIds } }).lean();
 
-  // Create a map for quick access to questions by ID
+  // src/controllers/exam-attempt/get-attempt-result.js (continued)
   const questionMap = {};
   questions.forEach((q) => {
     questionMap[q._id.toString()] = q;

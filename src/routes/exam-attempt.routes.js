@@ -1,3 +1,4 @@
+// src/routes/exam-attempt.routes.js - Optimized for high concurrency
 import express from "express";
 import startExam from "../controllers/exam-attempt/start-exam.js";
 import getExamQuestions from "../controllers/exam-attempt/get-exam-question.js";
@@ -16,45 +17,83 @@ import {
   verifyUserIsAdmin,
 } from "../middleware/authMiddleware.js";
 
+import {
+  examAttemptLimiter,
+  saveAnswerLimiter,
+  createRateLimiter,
+} from "../middleware/rateLimiterMiddleware.js";
+
 const router = express.Router();
 
 // Apply authentication middleware to all routes
 router.use(verifyUserIsSignedIn);
 
-// Get exam rules before starting
-router.get("/rules/:examId", getExamRules);
+// Custom rate limiters for specific high-volume operations
+const rulesLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  keyPrefix: "rules",
+  message: "Too many exam rules requests. Please wait before trying again.",
+});
 
-// Start a new exam attempt
-router.post("/start/:examId", startExam);
+const questionsLimiter = createRateLimiter({
+  windowMs: 30 * 1000, // 30 seconds
+  keyPrefix: "questions",
+  message: "Too many question requests. Please wait before trying again.",
+});
 
-// Get questions for an active attempt
-router.get("/questions/:attemptId", getExamQuestions);
+const submitLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  keyPrefix: "submit",
+  message: "Too many submission attempts. Please wait before trying again.",
+});
 
-// Save answer for a question
-router.post("/answer/:attemptId/:questionId", saveAnswer);
+const timeLimiter = createRateLimiter({
+  windowMs: 5 * 1000, // 5 seconds
+  keyPrefix: "time-update",
+  message: "Too many time update requests. Please wait before trying again.",
+});
 
-// Update time remaining
-router.put("/time/:attemptId", updateTimeRemaining);
+// Get exam rules before starting - Apply rules-specific limiter
+router.get("/rules/:examId", rulesLimiter, getExamRules);
 
-// Submit exam
-router.post("/submit/:attemptId", submitExam);
+// Start a new exam attempt - Apply exam attempt limiter
+router.post("/start/:examId", examAttemptLimiter, startExam);
 
-// Get result of an attempt
-router.get("/result/:attemptId", getAttemptResult);
+// Get questions for an active attempt - Apply questions-specific limiter
+router.get("/questions/:attemptId", questionsLimiter, getExamQuestions);
 
-// Get all attempts by user
-router.get("/user-attempts", getUserAttempts);
+// Save answer for a question - Apply save answer limiter (higher limits)
+router.post("/answer/:attemptId/:questionId", saveAnswerLimiter, saveAnswer);
 
-// Get rankings for an exam (public, with additional details for authenticated users)
-router.get("/rankings/:examId", getExamRankings);
+// Update time remaining - Apply time-specific limiter
+router.put("/time/:attemptId", timeLimiter, updateTimeRemaining);
+
+// Submit exam - Apply submit-specific limiter
+router.post("/submit/:attemptId", submitLimiter, submitExam);
+
+// Get result of an attempt - Apply standard exam attempt limiter
+router.get("/result/:attemptId", examAttemptLimiter, getAttemptResult);
+
+// Get all attempts by user - Apply standard exam attempt limiter
+router.get("/user-attempts", examAttemptLimiter, getUserAttempts);
+
+// Get rankings for an exam - Apply standard exam attempt limiter
+router.get("/rankings/:examId", examAttemptLimiter, getExamRankings);
 
 // Admin routes - require admin role
 router.use(verifyUserIsAdmin);
 
+// Admin-specific rate limiter (less restrictive for admins)
+const adminLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  keyPrefix: "admin-exam",
+  message: "Too many admin operations. Please wait before trying again.",
+});
+
 // Calculate rankings for an exam
-router.post("/calculate-rankings/:examId", calculateRankings);
+router.post("/calculate-rankings/:examId", adminLimiter, calculateRankings);
 
 // Export rankings
-router.get("/export-rankings/:examId", exportRankings);
+router.get("/export-rankings/:examId", adminLimiter, exportRankings);
 
 export default router;
