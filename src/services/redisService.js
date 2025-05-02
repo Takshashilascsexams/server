@@ -1,4 +1,3 @@
-// src/services/redisService.js - Fixed to include userService definition
 import createRedisClient from "../utils/redisClient.js";
 
 // Create Redis clients with different prefixes for different data types
@@ -176,6 +175,9 @@ const processBatchQueue = async (type, processor) => {
 
 // Enhanced exam service with batching and improved caching
 const examService = {
+  // Cache client for direct operations
+  examCache,
+
   // Basic cache operations
   getExam: async (examId) => get(examCache, `exam:${examId}`),
   setExam: async (examId, examData, ttl = DEFAULT_TTL) =>
@@ -234,13 +236,15 @@ const examService = {
   },
 
   setUserSpecificExamsCache: async (userId, data, ttl = 15 * 60) => {
-    const shardId = parseInt(userId.substring(0, 8), 16) % 16;
-    return set(examCache, `categorized:${shardId}:${userId}`, data, ttl);
+    const userIdStr = String(userId);
+    const shardId = parseInt(userIdStr.substring(0, 8), 16) % 16;
+    return set(examCache, `categorized:${shardId}:${userIdStr}`, data, ttl);
   },
 
   clearUserSpecificExamsCache: async (userId) => {
-    const shardId = parseInt(userId.substring(0, 8), 16) % 16;
-    return del(examCache, `categorized:${shardId}:${userId}`);
+    const userIdStr = String(userId);
+    const shardId = parseInt(userIdStr.substring(0, 8), 16) % 16;
+    return del(examCache, `categorized:${shardId}:${userIdStr}`);
   },
 
   // Clear all user-specific caches with proper sharding
@@ -259,7 +263,7 @@ const examService = {
     // Split the work to avoid blocking Redis
     const tasks = [
       clearPattern(examCache, "exam:*", 500),
-      clearCategorizedExamsCache(),
+      clearPattern(examCache, "categorized:*", 200),
       clearPattern(examCache, "latest:*", 100),
     ];
 
@@ -286,15 +290,17 @@ const examService = {
 
   // Bundle-specific methods with sharding
   getBundleCache: async (bundleId, userId) => {
-    const shardId = parseInt(userId.substring(0, 8), 16) % 8;
-    return get(examCache, `bundle:${shardId}:${bundleId}:${userId}`);
+    const userIdStr = String(userId);
+    const shardId = parseInt(userIdStr.substring(0, 8), 16) % 8;
+    return get(examCache, `bundle:${shardId}:${bundleId}:${userIdStr}`);
   },
 
   setBundleCache: async (bundleId, userId, bundleData, ttl = 15 * 60) => {
-    const shardId = parseInt(userId.substring(0, 8), 16) % 8;
+    const userIdStr = String(userId);
+    const shardId = parseInt(userIdStr.substring(0, 8), 16) % 8;
     return set(
       examCache,
-      `bundle:${shardId}:${bundleId}:${userId}`,
+      `bundle:${shardId}:${bundleId}:${userIdStr}`,
       bundleData,
       ttl
     );
@@ -425,6 +431,29 @@ const questionService = {
       questionIds: questions.map((q) => q._id.toString()),
     });
   },
+
+  // Bulk get exams - simple implementation for compatibility
+  bulkGetExams: async (questionIds) => {
+    try {
+      const promises = questionIds.map((id) => get(questionCache, `q:${id}`));
+      const results = await Promise.allSettled(promises);
+
+      return results
+        .map((result, index) => {
+          if (result.status === "fulfilled" && result.value) {
+            return {
+              id: questionIds[index],
+              data: result.value,
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.error("Error in bulkGetExams:", error);
+      return [];
+    }
+  },
 };
 
 // Enhanced exam attempt service with optimizations for concurrent users
@@ -469,15 +498,20 @@ const attemptService = {
 
   // Get user's attempts by examId with sharding
   getUserAttemptsByExam: async (userId, examId) => {
-    const shardId = parseInt(userId.substring(0, 8), 16) % 8;
-    return get(examCache, `attempts:${shardId}:user:${userId}:exam:${examId}`);
+    const userIdStr = String(userId);
+    const shardId = parseInt(userIdStr.substring(0, 8), 16) % 8;
+    return get(
+      examCache,
+      `attempts:${shardId}:user:${userIdStr}:exam:${examId}`
+    );
   },
 
   setUserAttemptsByExam: async (userId, examId, attemptsData, ttl = 5 * 60) => {
-    const shardId = parseInt(userId.substring(0, 8), 16) % 8;
+    const userIdStr = String(userId);
+    const shardId = parseInt(userIdStr.substring(0, 8), 16) % 8;
     return set(
       examCache,
-      `attempts:${shardId}:user:${userId}:exam:${examId}`,
+      `attempts:${shardId}:user:${userIdStr}:exam:${examId}`,
       attemptsData,
       ttl
     );
@@ -491,8 +525,9 @@ const attemptService = {
 
   // Clear user attempts with sharding
   clearUserAttempts: async (userId) => {
-    const shardId = parseInt(userId.substring(0, 8), 16) % 8;
-    return clearPattern(examCache, `attempts:${shardId}:user:${userId}:*`);
+    const userIdStr = String(userId);
+    const shardId = parseInt(userIdStr.substring(0, 8), 16) % 8;
+    return clearPattern(examCache, `attempts:${shardId}:user:${userIdStr}:*`);
   },
 
   // Clear exam rankings
@@ -624,19 +659,21 @@ const paymentService = {
     const userIdStr = String(userId);
 
     const shardId = parseInt(userIdStr.substring(0, 8), 16) % 16;
-    return get(paymentCache, `access:${shardId}:${userId}`);
+    return get(paymentCache, `access:${shardId}:${userIdStr}`);
   },
 
   // Set user's access to exams
   setUserExamAccess: async (userId, accessMap, ttl = 5 * 60) => {
-    const shardId = parseInt(userId.substring(0, 8), 16) % 16;
-    return set(paymentCache, `access:${shardId}:${userId}`, accessMap, ttl);
+    const userIdStr = String(userId);
+    const shardId = parseInt(userIdStr.substring(0, 8), 16) % 16;
+    return set(paymentCache, `access:${shardId}:${userIdStr}`, accessMap, ttl);
   },
 
   // Clear a user's access cache
   clearUserExamAccess: async (userId) => {
-    const shardId = parseInt(userId.substring(0, 8), 16) % 16;
-    return del(paymentCache, `access:${shardId}:${userId}`);
+    const userIdStr = String(userId);
+    const shardId = parseInt(userIdStr.substring(0, 8), 16) % 16;
+    return del(paymentCache, `access:${shardId}:${userIdStr}`);
   },
 
   // Clear access cache for all users with sharding
@@ -653,8 +690,12 @@ const paymentService = {
   batchCheckAccess: async (userId, examIds) => {
     try {
       // Get access map from cache
-      const shardId = parseInt(userId.substring(0, 8), 16) % 16;
-      const accessMap = await get(paymentCache, `access:${shardId}:${userId}`);
+      const userIdStr = String(userId);
+      const shardId = parseInt(userIdStr.substring(0, 8), 16) % 16;
+      const accessMap = await get(
+        paymentCache,
+        `access:${shardId}:${userIdStr}`
+      );
 
       if (!accessMap) {
         return null; // Not cached, will need database check
@@ -697,23 +738,10 @@ const checkHealth = async () => {
       analyticsResult === "PONG" &&
       paymentResult === "PONG";
 
-    // Return detailed health status
-    return {
-      healthy: allHealthy,
-      services: {
-        exam: examResult === "PONG",
-        user: userResult === "PONG",
-        question: questionResult === "PONG",
-        analytics: analyticsResult === "PONG",
-        payment: paymentResult === "PONG",
-      },
-    };
+    return allHealthy;
   } catch (error) {
     console.error(`Redis health check failed:`, error.message);
-    return {
-      healthy: false,
-      error: error.message,
-    };
+    return false;
   }
 };
 

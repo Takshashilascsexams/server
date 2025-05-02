@@ -1,4 +1,3 @@
-// src/controllers/exam-attempt/get-exam-rules.js - Optimized for high concurrency
 import Exam from "../../models/exam.models.js";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import { examService } from "../../services/redisService.js";
@@ -7,7 +6,7 @@ import checkExamAccess from "../payment/check-access.js";
 
 /**
  * Controller to get exam rules and information before starting
- * Optimized for high concurrency with 1000+ users
+ * Optimized for high concurrency with caching
  */
 const getExamRules = catchAsync(async (req, res, next) => {
   const { examId } = req.params;
@@ -27,7 +26,7 @@ const getExamRules = catchAsync(async (req, res, next) => {
   const rulesCacheKey = `rules:${examId}`;
   const accessCacheKey = `access:${userId}:${examId}`;
 
-  // Phase 1: Try to get rules from cache first
+  // Try to get rules from cache first
   try {
     const cachedRules = await examService.getExamRules(examId);
     if (cachedRules) {
@@ -90,7 +89,7 @@ const getExamRules = catchAsync(async (req, res, next) => {
     // Continue to database fetch on cache error
   }
 
-  // Phase 2: Get the exam data - try cache first
+  // Get the exam data - try cache first
   let exam;
   try {
     exam = await examService.getExam(examId);
@@ -126,7 +125,7 @@ const getExamRules = catchAsync(async (req, res, next) => {
     return next(new AppError("This exam is not currently active", 400));
   }
 
-  // Phase 3: Check if user has access to premium exam
+  // Check if user has access to premium exam
   let hasAccess = true;
   if (exam.isPremium) {
     try {
@@ -167,7 +166,7 @@ const getExamRules = catchAsync(async (req, res, next) => {
     }
   }
 
-  // Phase 4: Prepare exam rules
+  // Prepare exam rules
   const examRules = {
     id: exam._id,
     title: exam.title,

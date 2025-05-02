@@ -1,4 +1,3 @@
-// src/routes/exam-attempt.routes.js - Optimized for high concurrency
 import express from "express";
 import startExam from "../controllers/exam-attempt/start-exam.js";
 import getExamQuestions from "../controllers/exam-attempt/get-exam-question.js";
@@ -17,11 +16,7 @@ import {
   verifyUserIsAdmin,
 } from "../middleware/authMiddleware.js";
 
-import {
-  examAttemptLimiter,
-  saveAnswerLimiter,
-  createRateLimiter,
-} from "../middleware/rateLimiterMiddleware.js";
+import { createRateLimiter } from "../middleware/rateLimiterMiddleware.js";
 
 const router = express.Router();
 
@@ -29,55 +24,73 @@ const router = express.Router();
 router.use(verifyUserIsSignedIn);
 
 // Custom rate limiters for specific high-volume operations
+const examAttemptLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per minute
+  keyPrefix: "exam-attempt",
+  message: "Too many exam attempt requests. Please wait before trying again.",
+});
+
+const saveAnswerLimiter = createRateLimiter({
+  windowMs: 10 * 1000, // 10 seconds
+  max: 20, // 20 requests per 10 seconds
+  keyPrefix: "save-answer",
+  message: "Too many answer save requests. Please wait before trying again.",
+});
+
 const rulesLimiter = createRateLimiter({
   windowMs: 60 * 1000, // 1 minute
+  max: 20, // 20 requests per minute
   keyPrefix: "rules",
   message: "Too many exam rules requests. Please wait before trying again.",
 });
 
 const questionsLimiter = createRateLimiter({
   windowMs: 30 * 1000, // 30 seconds
+  max: 15, // 15 requests per 30 seconds
   keyPrefix: "questions",
   message: "Too many question requests. Please wait before trying again.",
 });
 
 const submitLimiter = createRateLimiter({
   windowMs: 60 * 1000, // 1 minute
+  max: 10, // 10 requests per minute
   keyPrefix: "submit",
   message: "Too many submission attempts. Please wait before trying again.",
 });
 
 const timeLimiter = createRateLimiter({
   windowMs: 5 * 1000, // 5 seconds
+  max: 10, // 10 requests per 5 seconds
   keyPrefix: "time-update",
   message: "Too many time update requests. Please wait before trying again.",
 });
 
-// Get exam rules before starting - Apply rules-specific limiter
+// Get exam rules before starting
 router.get("/rules/:examId", rulesLimiter, getExamRules);
 
-// Start a new exam attempt - Apply exam attempt limiter
+// Start a new exam attempt
 router.post("/start/:examId", examAttemptLimiter, startExam);
 
-// Get questions for an active attempt - Apply questions-specific limiter
+// Get questions for an active attempt
 router.get("/questions/:attemptId", questionsLimiter, getExamQuestions);
 
-// Save answer for a question - Apply save answer limiter (higher limits)
+// Save answer for a question
 router.post("/answer/:attemptId/:questionId", saveAnswerLimiter, saveAnswer);
 
-// Update time remaining - Apply time-specific limiter
+// Update time remaining
 router.put("/time/:attemptId", timeLimiter, updateTimeRemaining);
 
-// Submit exam - Apply submit-specific limiter
+// Submit exam
 router.post("/submit/:attemptId", submitLimiter, submitExam);
 
-// Get result of an attempt - Apply standard exam attempt limiter
+// Get result of an attempt
 router.get("/result/:attemptId", examAttemptLimiter, getAttemptResult);
 
-// Get all attempts by user - Apply standard exam attempt limiter
+// Get all attempts by user
 router.get("/user-attempts", examAttemptLimiter, getUserAttempts);
 
-// Get rankings for an exam - Apply standard exam attempt limiter
+// Get rankings for an exam (public, with additional details for authenticated users)
 router.get("/rankings/:examId", examAttemptLimiter, getExamRankings);
 
 // Admin routes - require admin role
@@ -86,6 +99,7 @@ router.use(verifyUserIsAdmin);
 // Admin-specific rate limiter (less restrictive for admins)
 const adminLimiter = createRateLimiter({
   windowMs: 60 * 1000, // 1 minute
+  max: 30, // 30 requests per minute
   keyPrefix: "admin-exam",
   message: "Too many admin operations. Please wait before trying again.",
 });

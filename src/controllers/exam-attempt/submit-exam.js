@@ -1,4 +1,3 @@
-// src/controllers/exam-attempt/submit-exam.js - Optimized for high concurrency
 import ExamAttempt from "../../models/examAttempt.models.js";
 import Exam from "../../models/exam.models.js";
 import Question from "../../models/questions.models.js";
@@ -14,7 +13,7 @@ import mongoose from "mongoose";
 
 /**
  * Controller to submit an exam and calculate results
- * Optimized for high concurrency with 1000+ simultaneous submissions
+ * Optimized for high concurrency
  */
 const submitExam = catchAsync(async (req, res, next) => {
   const { attemptId } = req.params;
@@ -151,7 +150,7 @@ const submitExam = catchAsync(async (req, res, next) => {
       // If cache miss, fetch from database
       if (questions.length !== questionIds.length) {
         questions = await Question.find({ _id: { $in: questionIds } })
-          .select("options type marks hasNegativeMarking negativeMarks") // Only fetch fields we need
+          .select("options type marks hasNegativeMarking negativeMarks")
           .lean();
 
         // Build map for quick access
@@ -264,7 +263,6 @@ const submitExam = catchAsync(async (req, res, next) => {
       };
 
       // Update the attempt in the database with findOneAndUpdate for better concurrency
-      // This is more efficient than loading the full document, modifying it, and saving
       const updatedAttempt = await ExamAttempt.findOneAndUpdate(
         {
           _id: attemptId,
@@ -334,6 +332,7 @@ const submitExam = catchAsync(async (req, res, next) => {
       // Abort transaction on error
       await session.abortTransaction();
       session.endSession();
+
       console.error("Error submitting exam:", error);
       return next(new AppError("Failed to submit exam: " + error.message, 500));
     } finally {

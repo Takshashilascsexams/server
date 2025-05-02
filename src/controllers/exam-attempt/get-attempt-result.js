@@ -1,5 +1,4 @@
 import ExamAttempt from "../../models/examAttempt.models.js";
-import Exam from "../../models/exam.models.js";
 import Question from "../../models/questions.models.js";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import { getUserId } from "../../utils/cachedDbQueries.js";
@@ -48,7 +47,7 @@ const getAttemptResult = catchAsync(async (req, res, next) => {
   const questionIds = attempt.answers.map((a) => a.questionId);
   const questions = await Question.find({ _id: { $in: questionIds } }).lean();
 
-  // src/controllers/exam-attempt/get-attempt-result.js (continued)
+  // Create a map for quick access to questions by ID
   const questionMap = {};
   questions.forEach((q) => {
     questionMap[q._id.toString()] = q;

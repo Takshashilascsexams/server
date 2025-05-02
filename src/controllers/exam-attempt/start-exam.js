@@ -1,4 +1,3 @@
-// src/controllers/exam-attempt/start-exam.js - Optimized for high concurrency
 import ExamAttempt from "../../models/examAttempt.models.js";
 import Exam from "../../models/exam.models.js";
 import Question from "../../models/questions.models.js";
@@ -9,7 +8,7 @@ import { examService, questionService } from "../../services/redisService.js";
 
 /**
  * Controller to start a new exam attempt
- * Optimized for 1000+ concurrent users
+ * Optimized for high concurrency with caching
  */
 const startExam = catchAsync(async (req, res, next) => {
   const { examId } = req.params;
@@ -30,15 +29,9 @@ const startExam = catchAsync(async (req, res, next) => {
   const accessCacheKey = `access:${userId}:${examId}`;
   const attemptCacheKey = `attempt:${userId}:${examId}:active`;
 
-  // Use a multi-phase approach to reduce database load
-  let exam;
-  let questions;
-  let hasAccess = false;
-  let existingAttempt;
-
   // Phase 1: Check for an existing attempt in cache first
+  let existingAttempt;
   try {
-    // Check if user already has an active attempt
     existingAttempt = await examService.examCache.get(attemptCacheKey);
     if (existingAttempt) {
       try {
@@ -66,21 +59,18 @@ const startExam = catchAsync(async (req, res, next) => {
           });
         }
       } catch (error) {
-        // Invalid cache data, will proceed to create new attempt
         console.error("Error parsing existing attempt:", error);
       }
     }
   } catch (error) {
     console.error("Error checking existing attempt:", error);
-    // Continue with normal flow if cache check fails
   }
 
   // Phase 2: Get exam data - use cache first approach
+  let exam;
   try {
-    // Try to get from Redis cache first
     exam = await examService.getExam(examId);
     if (!exam) {
-      // Cache miss - get from database with optimized projection
       exam = await Exam.findById(examId)
         .select(
           "title description isActive isPremium duration totalQuestions totalMarks"
@@ -96,7 +86,6 @@ const startExam = catchAsync(async (req, res, next) => {
     }
   } catch (error) {
     console.error("Error fetching exam data:", error);
-    // Fallback to database
     exam = await Exam.findById(examId)
       .select(
         "title description isActive isPremium duration totalQuestions totalMarks"
@@ -114,6 +103,7 @@ const startExam = catchAsync(async (req, res, next) => {
   }
 
   // Phase 3: Check if user has access to the exam (for premium exams)
+  let hasAccess = true;
   if (exam.isPremium) {
     try {
       // Try to get access status from cache
@@ -196,11 +186,10 @@ const startExam = catchAsync(async (req, res, next) => {
   }
 
   // Phase 5: Get questions - try cache first approach with optimized fields
+  let questions;
   try {
-    // Try to get from Redis cache first
     questions = await questionService.getQuestionsByExam(examId);
     if (!questions || questions.length === 0) {
-      // Cache miss - get from database with optimized projection
       questions = await Question.find({
         examId,
         isActive: true,
@@ -219,7 +208,6 @@ const startExam = catchAsync(async (req, res, next) => {
     }
   } catch (error) {
     console.error("Error fetching questions:", error);
-    // Fallback to database
     questions = await Question.find({
       examId,
       isActive: true,

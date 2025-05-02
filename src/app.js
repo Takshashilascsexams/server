@@ -1,10 +1,4 @@
-// app.js - Structured for high concurrency with 1,000+ users
-
-// ----------------------------------------
-// 1. IMPORTS
-// ----------------------------------------
-
-// Core libraries
+// libraries
 import * as dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
@@ -18,26 +12,21 @@ import fs from "fs";
 import mongoose from "mongoose";
 import os from "os";
 
-// Custom middleware and utilities
+// middlewares utilities functions
 import compressResponse from "./utils/compressResponse.js";
 import { AppError, errorController } from "./utils/errorHandler.js";
-import { apiLimiter } from "./middleware/rateLimiterMiddleware.js";
+import { apiLimiter } from "./middleware/rateLimiterMiddleware.js"; // Import the general API rate limiter
 
-// Services
+// services
 import { checkHealth, examService } from "./services/redisService.js";
 
-// Routes
+// routes
 import examRoute from "./routes/exam.routes.js";
 import questionsRoute from "./routes/question.routes.js";
 import paymentRoute from "./routes/payment.routes.js";
 import bundleExamRoute from "./routes/bundle-exam.routes.js";
 import examAttemptRoute from "./routes/exam-attempt.routes.js";
 
-// ----------------------------------------
-// 2. CONFIGURATION
-// ----------------------------------------
-
-// Load environment variables
 dotenv.config();
 
 // Create uploads directory if it doesn't exist
@@ -45,27 +34,6 @@ const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
-
-// Initialize Express app
-const app = express();
-
-// CORS configuration
-const corsOptions = {
-  origin: process.env.CLIENT || "http://localhost:3000",
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  credentials: true,
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-};
-
-// High concurrency settings
-const MAX_CONCURRENT_REQUESTS = 5000;
-let currentRequests = 0;
-
-// ----------------------------------------
-// 3. ERROR HANDLING (PROCESS LEVEL)
-// ----------------------------------------
 
 // Uncaught exception handler
 process.on("uncaughtException", (err) => {
@@ -80,6 +48,13 @@ process.on("unhandledRejection", (err) => {
   console.log(err.name, err.message);
   process.exit(1);
 });
+
+// Initialize Express app
+const app = express();
+
+// High concurrency settings
+const MAX_CONCURRENT_REQUESTS = 5000;
+let currentRequests = 0;
 
 // Graceful shutdown handler
 process.on("SIGTERM", gracefulShutdown);
@@ -125,19 +100,33 @@ async function gracefulShutdown() {
   }
 }
 
-// ----------------------------------------
-// 4. MIDDLEWARE SETUP
-// ----------------------------------------
+// 1) GLOBAL MIDDLEWARES
+// Cors
+const corsOptions = {
+  origin: process.env.CLIENT || "http://localhost:3000",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
 
-// Security and request parsing
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
-app.use(helmet()); // Set security HTTP headers
-app.use(compressResponse); // Response compression
-app.use(apiLimiter); // Global rate limiting
-app.use(morgan("tiny")); // Logging (development)
 
-// Body parsers
+// Response compression middleware
+app.use(compressResponse);
+
+// Set security HTTP headers
+app.use(helmet());
+
+// Development logging
+app.use(morgan("tiny"));
+
+// Apply global rate limiter to all routes
+app.use(apiLimiter);
+
+// Body parser, reading data from body into req.body
 app.use(
   express.json({
     limit: "5mb",
@@ -153,20 +142,23 @@ app.use(
 );
 app.use(express.static("./public"));
 
-// Security middleware
-app.use(mongoSanitize()); // NoSQL injection protection
-app.use(xss()); // XSS protection
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Data sanitization against XSS
+app.use(xss());
+
+// Prevent parameter pollution
 app.use(
   hpp({
     whitelist: ["duration", "totalQuestions", "difficultyLevel", "category"],
   })
 );
 
-// Connection optimization
+// Add the keep-alive middleware here
 app.use((req, res, next) => {
-  // Optimize keep-alive settings
   res.setHeader("Connection", "keep-alive");
-  res.setHeader("Keep-Alive", "timeout=120, max=1000");
+  res.setHeader("Keep-Alive", "timeout=120, max=1000"); // keep alive for 120secs and max request is 1000
 
   // Add Cache-Control for static resources
   if (req.path.match(/\.(js|css|jpg|png|ico|svg|woff|woff2)$/)) {
@@ -204,11 +196,9 @@ app.use((req, res, next) => {
   next();
 });
 
-// ----------------------------------------
-// 5. ROUTES
-// ----------------------------------------
-
-// Health check route
+// 2) ROUTES
+// Public route
+// Health check route (exempted from rate limiting)
 app.get("/health", async (req, res) => {
   const mongoStatus = mongoose.connection.readyState === 1;
 
@@ -220,7 +210,7 @@ app.get("/health", async (req, res) => {
     if (cachedStatus === null) {
       // Only check Redis health every 30 seconds
       const healthResult = await checkHealth();
-      redisStatus = healthResult.healthy;
+      redisStatus = healthResult;
       // Cache the status for 30 seconds
       await examService.examCache.set(
         "redis-health-status",
@@ -272,7 +262,6 @@ app.get("/health", async (req, res) => {
   });
 });
 
-// Root route
 app.get("/", (req, res) => {
   res.send("Exam Portal API is running");
 });
@@ -284,20 +273,12 @@ app.use("/api/v1/payments", paymentRoute);
 app.use("/api/v1/bundle-exam", bundleExamRoute);
 app.use("/api/v1/exam-attempts", examAttemptRoute);
 
-// ----------------------------------------
-// 6. ERROR HANDLING (APPLICATION LEVEL)
-// ----------------------------------------
-
 // Handle undefined routes
 app.all("*", (req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
-// Global error handler
+// 3) ERROR HANDLING
 app.use(errorController);
-
-// ----------------------------------------
-// 7. EXPORTS
-// ----------------------------------------
 
 export default app;
