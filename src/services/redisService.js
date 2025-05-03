@@ -1,4 +1,4 @@
-// src/services/redisService.js - Fixed to include correct function implementations
+// src/services/redisService.js - Optimized and consolidated
 import createRedisClient from "../utils/redisClient.js";
 
 // Create Redis clients with different prefixes for different data types
@@ -325,7 +325,7 @@ const examService = {
     return true;
   },
 
-  // Add exam rules methods
+  // Exam rules methods
   getExamRules: async (examId) => get(examCache, `rules:${examId}`),
   setExamRules: async (examId, rulesData, ttl = 24 * 60 * 60) =>
     set(examCache, `rules:${examId}`, rulesData, ttl),
@@ -359,6 +359,39 @@ const questionService = {
     set(questionCache, `q:${questionId}`, questionData, ttl),
 
   deleteQuestion: async (questionId) => del(questionCache, `q:${questionId}`),
+
+  prefetchQuestionsForAttempt: async (attemptId, questionIds) => {
+    // Batch load questions for a specific attempt
+    try {
+      const cacheKey = `attempt:${attemptId}:questions`;
+      await set(questionCache, cacheKey, questionIds, 24 * 60 * 60); // Cache for the duration of the exam
+
+      // Prefetch all questions in batch
+      const pipeline = questionCache.pipeline();
+      questionIds.forEach((id) => {
+        pipeline.get(`q:${id}`);
+      });
+
+      const results = await pipeline.exec();
+      const missingQuestions = [];
+
+      // Identify which questions need to be loaded from database
+      results.forEach((result, index) => {
+        const [err, data] = result;
+        if (err || !data) {
+          missingQuestions.push(questionIds[index]);
+        }
+      });
+
+      return missingQuestions.length === 0;
+    } catch (error) {
+      console.error(
+        `Error prefetching questions for attempt ${attemptId}:`,
+        error
+      );
+      return false;
+    }
+  },
 
   // Efficient batch loading for questions
   getQuestionsByExam: async (examId) => {
@@ -403,7 +436,8 @@ const questionService = {
     }
   },
 
-  bulkGetExams: async (questionIds) => {
+  // Renamed from bulkGetExams to bulkGetQuestions for clarity
+  bulkGetQuestions: async (questionIds) => {
     try {
       const keys = questionIds.map((id) => `q:${id}`);
       const results = await questionCache.mget(...keys);
@@ -427,7 +461,8 @@ const questionService = {
     }
   },
 
-  bulkSetExams: async (questionsData, ttl = DEFAULT_TTL) => {
+  // Renamed from bulkSetExams to bulkSetQuestions for clarity
+  bulkSetQuestions: async (questionsData, ttl = DEFAULT_TTL) => {
     try {
       const pipeline = questionCache.pipeline();
 
@@ -493,6 +528,81 @@ const attemptService = {
 
   deleteAttempt: async (attemptId) => del(examCache, `attempt:${attemptId}`),
 
+  batchGetQuestionsForAttempt: async (attemptId) => {
+    try {
+      // Get question IDs for this attempt
+      const questionIds = await get(
+        questionCache,
+        `attempt:${attemptId}:questions`
+      );
+      if (!questionIds || !Array.isArray(questionIds)) {
+        return null;
+      }
+
+      // Batch load all questions
+      const pipeline = questionCache.pipeline();
+      questionIds.forEach((id) => {
+        pipeline.get(`q:${id}`);
+      });
+
+      const results = await pipeline.exec();
+
+      // Process results - handle any missing questions
+      return results
+        .map(([err, data], index) => {
+          if (err || !data) return null;
+          try {
+            const question = JSON.parse(data);
+            return {
+              id: questionIds[index],
+              data: question,
+            };
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.error(
+        `Error batch getting questions for attempt ${attemptId}:`,
+        error
+      );
+      return null;
+    }
+  },
+
+  // Fixed queue name to match the worker process setup
+  batchSaveAnswers: async (attemptId, answers) => {
+    try {
+      // Queue the answers for batch processing - using consistent queue name "answer_updates"
+      await addToBatchQueue("answer_updates", {
+        attemptId,
+        answers,
+        timestamp: Date.now(),
+      });
+
+      // Also update cache for immediate consistency
+      const cacheKey = `attempt:${attemptId}:answers`;
+      const currentAnswers = (await get(examCache, cacheKey)) || {};
+
+      // Update answers in cache
+      answers.forEach((answer) => {
+        currentAnswers[answer.questionId] = answer;
+      });
+
+      // Save back to cache with short TTL
+      await set(examCache, cacheKey, currentAnswers, 5 * 60);
+
+      return true;
+    } catch (error) {
+      console.error(
+        `Error queueing batch answers for attempt ${attemptId}:`,
+        error
+      );
+      return false;
+    }
+  },
+
   // Store active attempts separately with very short TTL for high consistency
   updateActiveAttempt: async (attemptId, updates) => {
     try {
@@ -509,14 +619,6 @@ const attemptService = {
       console.error(`Error updating active attempt ${attemptId}:`, error);
       return false;
     }
-  },
-
-  // Batch save answers for improved performance
-  batchSaveAnswers: async (attemptId, answers) => {
-    return addToBatchQueue("answer_updates", {
-      attemptId,
-      answers,
-    });
   },
 
   // Get user's attempts by examId with sharding
@@ -550,11 +652,7 @@ const attemptService = {
   // Clear exam rankings
   clearExamRankings: async (examId) => del(examCache, `rankings:${examId}`),
 
-  // Exam rules with longer TTL since they rarely change
-  getExamRules: async (examId) => get(examCache, `rules:${examId}`),
-
-  setExamRules: async (examId, rulesData, ttl = 24 * 60 * 60) =>
-    set(examCache, `rules:${examId}`, rulesData, ttl),
+  // Removed duplicate exam rules methods (kept in examService)
 
   // Optimized for multiple concurrent saves (used by submit-exam)
   incrementAttemptCount: async (examId) => {
@@ -785,7 +883,7 @@ const setupBackgroundWorkers = () => {
     }
   }, BATCH_INTERVAL);
 
-  // Process answer batch saves
+  // Process answer batch saves - fixed to use same queue name as batchSaveAnswers
   setInterval(async () => {
     try {
       const processed = await processBatchQueue(
