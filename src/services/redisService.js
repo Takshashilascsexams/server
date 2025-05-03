@@ -1,4 +1,4 @@
-// src/services/redisService.js - Fixed to include userService definition
+// src/services/redisService.js - Fixed to include correct function implementations
 import createRedisClient from "../utils/redisClient.js";
 
 // Create Redis clients with different prefixes for different data types
@@ -176,6 +176,13 @@ const processBatchQueue = async (type, processor) => {
 
 // Enhanced exam service with batching and improved caching
 const examService = {
+  // Expose generic functions
+  get,
+  set,
+  del,
+  clearPattern,
+  examCache,
+
   // Basic cache operations
   getExam: async (examId) => get(examCache, `exam:${examId}`),
   setExam: async (examId, examData, ttl = DEFAULT_TTL) =>
@@ -317,6 +324,11 @@ const examService = {
     await Promise.allSettled(clearPromises);
     return true;
   },
+
+  // Add exam rules methods
+  getExamRules: async (examId) => get(examCache, `rules:${examId}`),
+  setExamRules: async (examId, rulesData, ttl = 24 * 60 * 60) =>
+    set(examCache, `rules:${examId}`, rulesData, ttl),
 };
 
 // User specific cache methods
@@ -388,6 +400,46 @@ const questionService = {
     } catch (error) {
       console.error(`Error batch loading questions for exam ${examId}:`, error);
       return null;
+    }
+  },
+
+  bulkGetExams: async (questionIds) => {
+    try {
+      const keys = questionIds.map((id) => `q:${id}`);
+      const results = await questionCache.mget(...keys);
+
+      return results
+        .map((data, index) => {
+          if (!data) return null;
+          try {
+            return {
+              id: questionIds[index],
+              data: JSON.parse(data),
+            };
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.error("Redis bulk get questions error:", error);
+      return [];
+    }
+  },
+
+  bulkSetExams: async (questionsData, ttl = DEFAULT_TTL) => {
+    try {
+      const pipeline = questionCache.pipeline();
+
+      questionsData.forEach(({ id, data }) => {
+        pipeline.set(`q:${id}`, JSON.stringify(data), "EX", ttl);
+      });
+
+      await pipeline.exec();
+      return true;
+    } catch (error) {
+      console.error("Redis bulk set questions error:", error);
+      return false;
     }
   },
 
@@ -629,7 +681,9 @@ const paymentService = {
 
   // Set user's access to exams
   setUserExamAccess: async (userId, accessMap, ttl = 5 * 60) => {
-    const shardId = parseInt(userId.substring(0, 8), 16) % 16;
+    const userIdStr = String(userId);
+
+    const shardId = parseInt(userIdStr.substring(0, 8), 16) % 16;
     return set(paymentCache, `access:${shardId}:${userId}`, accessMap, ttl);
   },
 
