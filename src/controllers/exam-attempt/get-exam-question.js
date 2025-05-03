@@ -3,7 +3,11 @@ import Exam from "../../models/exam.models.js";
 import Question from "../../models/questions.models.js";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import { getUserId } from "../../utils/cachedDbQueries.js";
-import { questionService } from "../../services/redisService.js";
+import {
+  questionService,
+  examService,
+  attemptService,
+} from "../../services/redisService.js";
 
 /**
  * Controller to fetch questions for an active exam attempt
@@ -46,75 +50,61 @@ const getExamQuestions = catchAsync(async (req, res, next) => {
     );
   }
 
-  // Get the exam details
-  const exam = await Exam.findById(attempt.examId);
+  // Get the exam details - use cached version
+  const exam = await examService.getExam(attempt.examId.toString());
   if (!exam) {
     return next(new AppError("Exam not found", 404));
   }
 
-  // Get the questions based on the questionIds in the attempt
-  const questionIds = attempt.answers.map((a) => a.questionId);
+  // Get the questionIds from the attempt
+  const questionIds = attempt.answers.map((a) => a.questionId.toString());
 
-  // Try to get questions from cache first
-  let questions = [];
-  let questionMap = {};
+  // Use the improved batch function to get questions from cache
+  let questionResults = await attemptService.batchGetQuestionsForAttempt(
+    attemptId
+  );
 
-  try {
-    // Build a map of questionId to question details for all questions in the exam
-    const allQuestions = await questionService.getQuestionsByExam(
-      attempt.examId.toString()
-    );
+  // If not in cache, fetch from database and cache them
+  if (!questionResults || questionResults.length !== questionIds.length) {
+    // Fetch questions from database
+    const questions = await Question.find({ _id: { $in: questionIds } })
+      .select("questionText type options statements statementInstruction marks")
+      .lean();
 
-    if (allQuestions && Array.isArray(allQuestions)) {
-      questionMap = allQuestions.reduce((map, q) => {
-        if (q && q._id) {
-          map[q._id.toString()] = q;
-        }
-        return map;
-      }, {});
+    // Prefetch for future requests
+    await questionService.prefetchQuestionsForAttempt(attemptId, questionIds);
 
-      // Select only the questions that are in this attempt
-      questions = questionIds
-        .map((qId) => questionMap[qId.toString()])
-        .filter(Boolean);
-    }
-  } catch (error) {
-    console.error("Error fetching questions from cache:", error);
+    // Map questions to the expected format
+    questionResults = questions.map((q) => ({
+      id: q._id.toString(),
+      data: q,
+    }));
   }
 
-  // If we couldn't get questions from cache, fetch from database
-  if (questions.length !== questionIds.length) {
-    questions = await Question.find({ _id: { $in: questionIds } }).lean();
-
-    // Cache individual questions for future requests
-    for (const q of questions) {
-      if (q && q._id) {
-        await questionService.setQuestion(q._id.toString(), q);
-      }
-    }
-  }
-
-  if (!questions || questions.length === 0) {
+  if (!questionResults || questionResults.length === 0) {
     return next(new AppError("No questions found for this exam attempt", 404));
   }
 
+  // Create a map for faster lookup
+  const questionMap = questionResults.reduce((map, item) => {
+    map[item.id] = item.data;
+    return map;
+  }, {});
+
   // Prepare questions for client-side rendering
-  // - Remove correct answer information
-  // - Add user's saved answers
   const preparedQuestions = [];
 
   for (let i = 0; i < attempt.answers.length; i++) {
     const answer = attempt.answers[i];
     if (!answer || !answer.questionId) continue;
 
-    const question = questions.find(
-      (q) => q && q._id && q._id.toString() === answer.questionId.toString()
-    );
+    const questionId = answer.questionId.toString();
+    const question = questionMap[questionId];
 
     if (question) {
       // Create a clean version of the question without revealing the correct answers
       const cleanQuestion = {
-        id: question._id,
+        id: question._id || questionId,
         questionText: question.questionText,
         type: question.type,
         marks: question.marks,
@@ -161,6 +151,25 @@ const getExamQuestions = catchAsync(async (req, res, next) => {
     negativeMarkingValue: exam.negativeMarkingValue,
     allowNavigation: exam.allowNavigation,
   };
+
+  // Cache the prepared questions for future requests
+  try {
+    await examService.set(
+      examService.examCache,
+      `prepared:${attemptId}:questions`,
+      {
+        questions: preparedQuestions,
+        exam: examDetails,
+        timestamp: Date.now(),
+      },
+      5 * 60
+    );
+  } catch (error) {
+    console.error(
+      `Error caching prepared questions for attempt ${attemptId}:`,
+      error
+    );
+  }
 
   res.status(200).json({
     status: "success",
