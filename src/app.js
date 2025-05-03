@@ -282,7 +282,7 @@ app.use("/api/v1/exam", examRoute);
 app.use("/api/v1/questions", questionsRoute);
 app.use("/api/v1/payments", paymentRoute);
 app.use("/api/v1/bundle-exam", bundleExamRoute);
-app.use("/api/v1/exam-attempts", examAttemptRoute);
+app.use("/api/v1/exam-attempt", examAttemptRoute);
 
 // ----------------------------------------
 // 6. ERROR HANDLING (APPLICATION LEVEL)

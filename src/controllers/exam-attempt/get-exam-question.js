@@ -11,6 +11,7 @@ import { questionService } from "../../services/redisService.js";
  * - Includes user's saved answers if any
  * - Maintains the same order as the attempt was created with
  */
+
 const getExamQuestions = catchAsync(async (req, res, next) => {
   const { attemptId } = req.params;
 
@@ -64,9 +65,11 @@ const getExamQuestions = catchAsync(async (req, res, next) => {
       attempt.examId.toString()
     );
 
-    if (allQuestions) {
+    if (allQuestions && Array.isArray(allQuestions)) {
       questionMap = allQuestions.reduce((map, q) => {
-        map[q._id.toString()] = q;
+        if (q && q._id) {
+          map[q._id.toString()] = q;
+        }
         return map;
       }, {});
 
@@ -85,7 +88,9 @@ const getExamQuestions = catchAsync(async (req, res, next) => {
 
     // Cache individual questions for future requests
     for (const q of questions) {
-      await questionService.setQuestion(q._id.toString(), q);
+      if (q && q._id) {
+        await questionService.setQuestion(q._id.toString(), q);
+      }
     }
   }
 
@@ -100,8 +105,10 @@ const getExamQuestions = catchAsync(async (req, res, next) => {
 
   for (let i = 0; i < attempt.answers.length; i++) {
     const answer = attempt.answers[i];
+    if (!answer || !answer.questionId) continue;
+
     const question = questions.find(
-      (q) => q._id.toString() === answer.questionId.toString()
+      (q) => q && q._id && q._id.toString() === answer.questionId.toString()
     );
 
     if (question) {
@@ -113,16 +120,24 @@ const getExamQuestions = catchAsync(async (req, res, next) => {
         marks: question.marks,
         responseTime: answer.responseTime || 0,
         selectedOption: answer.selectedOption,
-
-        // For MCQ type, remove isCorrect flag from options
-        options: question.options.map((opt) => ({
-          _id: opt._id,
-          optionText: opt.optionText,
-        })),
       };
 
+      // Safely handle options for MCQ type
+      if (question.options && Array.isArray(question.options)) {
+        cleanQuestion.options = question.options.map((opt) => ({
+          _id: opt._id,
+          optionText: opt.optionText,
+        }));
+      } else {
+        cleanQuestion.options = [];
+      }
+
       // Add statement-related fields for STATEMENT_BASED questions
-      if (question.type === "STATEMENT_BASED" && question.statements) {
+      if (
+        question.type === "STATEMENT_BASED" &&
+        question.statements &&
+        Array.isArray(question.statements)
+      ) {
         cleanQuestion.statements = question.statements.map((stmt) => ({
           statementNumber: stmt.statementNumber,
           statementText: stmt.statementText,

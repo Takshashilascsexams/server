@@ -1,14 +1,14 @@
-// src/controllers/exam-attempt/get-exam-rules.js - Optimized for high concurrency
 import Exam from "../../models/exam.models.js";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import { examService } from "../../services/redisService.js";
 import { getUserId } from "../../utils/cachedDbQueries.js";
-import checkExamAccess from "../payment/check-access.js";
+import checkExamAccessFunc from "../payment/check-access.js";
 
 /**
  * Controller to get exam rules and information before starting
  * Optimized for high concurrency with 1000+ users
  */
+
 const getExamRules = catchAsync(async (req, res, next) => {
   const { examId } = req.params;
 
@@ -22,11 +22,6 @@ const getExamRules = catchAsync(async (req, res, next) => {
     return next(new AppError("User not found", 404));
   }
 
-  // Define cache keys
-  const examCacheKey = `exam:${examId}`;
-  const rulesCacheKey = `rules:${examId}`;
-  const accessCacheKey = `access:${userId}:${examId}`;
-
   // Phase 1: Try to get rules from cache first
   try {
     const cachedRules = await examService.getExamRules(examId);
@@ -36,40 +31,34 @@ const getExamRules = catchAsync(async (req, res, next) => {
 
       if (cachedRules.isPremium) {
         try {
-          // Check access from cache
-          const cachedAccess = await examService.examCache.get(accessCacheKey);
-          if (cachedAccess !== null) {
-            hasAccess = cachedAccess === "true";
-          } else {
-            // If not in cache, check access using the controller
-            req.params = { examId };
-            const accessResult = await checkExamAccess(req, {}, (error) => {
-              if (error) throw error;
-            });
+          // Save original params
+          const originalParams = { ...req.params };
+          req.params = { examId };
 
+          // Direct call to checkExamAccess function
+          const accessResult = await checkExamAccessFunc(req);
+
+          // Safely extract access status
+          if (
+            accessResult &&
+            accessResult.status === "success" &&
+            accessResult.data &&
+            typeof accessResult.data.hasAccess === "boolean"
+          ) {
             hasAccess = accessResult.data.hasAccess;
-
-            // Cache the access result
-            await examService.examCache.set(
-              accessCacheKey,
-              hasAccess ? "true" : "false",
-              "EX",
-              5 * 60 // Short TTL to maintain freshness
+          } else {
+            console.log(
+              "Invalid access result format:",
+              JSON.stringify(accessResult)
             );
+            hasAccess = false; // Default to no access if format is unexpected
           }
+
+          // Restore original params
+          req.params = originalParams;
         } catch (error) {
           console.error("Error checking exam access:", error);
-          // Fallback to direct access check
-          req.params = { examId };
-          try {
-            const accessResult = await checkExamAccess(req, {}, (error) => {
-              if (error) throw error;
-            });
-            hasAccess = accessResult.data.hasAccess;
-          } catch (accessError) {
-            console.error("Fallback access check failed:", accessError);
-            hasAccess = false;
-          }
+          hasAccess = false;
         }
       }
 
@@ -130,40 +119,34 @@ const getExamRules = catchAsync(async (req, res, next) => {
   let hasAccess = true;
   if (exam.isPremium) {
     try {
-      // Check access from cache
-      const cachedAccess = await examService.examCache.get(accessCacheKey);
-      if (cachedAccess !== null) {
-        hasAccess = cachedAccess === "true";
-      } else {
-        // Cache miss - check access using controller
-        req.params = { examId };
-        const accessResult = await checkExamAccess(req, {}, (error) => {
-          if (error) throw error;
-        });
+      // Save original params
+      const originalParams = { ...req.params };
+      req.params = { examId };
 
+      // Direct call to checkExamAccess function
+      const accessResult = await checkExamAccessFunc(req);
+
+      // Safely extract access status
+      if (
+        accessResult &&
+        accessResult.status === "success" &&
+        accessResult.data &&
+        typeof accessResult.data.hasAccess === "boolean"
+      ) {
         hasAccess = accessResult.data.hasAccess;
-
-        // Cache the access result
-        await examService.examCache.set(
-          accessCacheKey,
-          hasAccess ? "true" : "false",
-          "EX",
-          5 * 60 // Short TTL to maintain freshness
+      } else {
+        console.log(
+          "Invalid access result format:",
+          JSON.stringify(accessResult)
         );
+        hasAccess = false; // Default to no access if format is unexpected
       }
+
+      // Restore original params
+      req.params = originalParams;
     } catch (error) {
       console.error("Error checking exam access:", error);
-      // Fallback to direct access check
-      req.params = { examId };
-      try {
-        const accessResult = await checkExamAccess(req, {}, (error) => {
-          if (error) throw error;
-        });
-        hasAccess = accessResult.data.hasAccess;
-      } catch (accessError) {
-        console.error("Fallback access check failed:", accessError);
-        hasAccess = false;
-      }
+      hasAccess = false;
     }
   }
 
