@@ -23,13 +23,14 @@ const authenticateUser = (req, res, next) => {
 // This is the Express middleware composition pattern
 const verifyUserIsSignedIn = (req, res, next) => {
   // Apply the rate limiter first
-  authLimiter(req, res, (err) => {
-    if (err) {
-      return next(err);
-    }
-    // Then apply the authentication logic
-    authenticateUser(req, res, next);
-  });
+  // authLimiter(req, res, (err) => {
+  //   if (err) {
+  //     return next(err);
+  //   }
+  //   // Then apply the authentication logic
+  //   authenticateUser(req, res, next);
+  // });
+  authenticateUser(req, res, next);
 };
 
 // Middleware to verify if a user is an admin

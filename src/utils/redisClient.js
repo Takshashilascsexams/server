@@ -1,6 +1,5 @@
-// Enhanced for high concurrency
+// Enhanced for high concurrency and batch operations
 import Redis from "ioredis";
-import { promisify } from "util";
 
 const createRedisClient = (prefix = "") => {
   // Determine if we should use clustered Redis based on environment
@@ -90,6 +89,66 @@ const createRedisClient = (prefix = "") => {
     } catch (error) {
       console.error(`Redis health check failed (${prefix}):`, error);
       return false;
+    }
+  };
+
+  // Add batch operation methods to better support frontend batched submissions
+  redisClient.batchProcess = async (batchKey, processor, options = {}) => {
+    const { batchSize = 50, lockTime = 10, waitBetweenBatches = 50 } = options;
+
+    const lockKey = `lock:${batchKey}`;
+    let processed = 0;
+
+    try {
+      // Try to acquire lock
+      const acquired = await redisClient.set(
+        lockKey,
+        Date.now(),
+        "NX",
+        "EX",
+        lockTime
+      );
+
+      if (!acquired) {
+        return 0; // Another process is handling this batch
+      }
+
+      // Get batch items
+      const items = await redisClient.lrange(batchKey, 0, batchSize - 1);
+      if (!items || items.length === 0) {
+        return 0;
+      }
+
+      // Process items
+      for (const item of items) {
+        try {
+          await processor(JSON.parse(item));
+          processed++;
+
+          // Remove processed item
+          await redisClient.lrem(batchKey, 1, item);
+
+          // Small delay to prevent overwhelming resources
+          if (waitBetweenBatches > 0) {
+            await new Promise((resolve) =>
+              setTimeout(resolve, waitBetweenBatches)
+            );
+          }
+        } catch (err) {
+          console.error(`Error processing batch item: ${err.message}`);
+          // Move to error queue instead of losing the item
+          await redisClient.rpush(`${batchKey}:errors`, item);
+          await redisClient.lrem(batchKey, 1, item);
+        }
+      }
+
+      return processed;
+    } catch (error) {
+      console.error(`Batch processing error for ${batchKey}:`, error);
+      return 0;
+    } finally {
+      // Release lock regardless of outcome
+      await redisClient.del(lockKey);
     }
   };
 

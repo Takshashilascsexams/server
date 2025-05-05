@@ -6,7 +6,7 @@ import checkExamAccessFunc from "../payment/check-access.js";
 
 /**
  * Controller to get exam rules and information before starting
- * Optimized for high concurrency with 1000+ users
+ * Optimized for high concurrency
  */
 
 const getExamRules = catchAsync(async (req, res, next) => {
