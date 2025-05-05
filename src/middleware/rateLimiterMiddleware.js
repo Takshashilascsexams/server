@@ -1,8 +1,6 @@
-// src/middleware/rateLimiterMiddleware.js - Fixed for compatibility with newer express-rate-limit version
 import rateLimit from "express-rate-limit";
 import RedisStore from "rate-limit-redis";
 import createRedisClient from "../utils/redisClient.js";
-import cluster from "cluster";
 import os from "os";
 
 // Create dedicated Redis client for rate limiting
@@ -24,6 +22,7 @@ const getDynamicLimits = () => {
     authMax: Math.floor(100 * loadFactor), // up to 100 auth requests per 15 min
     examAttemptMax: Math.floor(200 * loadFactor), // up to 200 exam attempts per minute
     saveAnswerMax: Math.floor(1500 * loadFactor), // up to 1500 answer saves per minute
+    batchAnswerMax: Math.floor(300 * loadFactor), // up to 300 batch operations per minute
   };
 };
 
@@ -52,6 +51,8 @@ export const createRateLimiter = (options = {}) => {
         return dynamicLimits.examAttemptMax;
       case "save-answer":
         return dynamicLimits.saveAnswerMax;
+      case "batch-answer":
+        return dynamicLimits.batchAnswerMax;
       default:
         return max || 100;
     }
@@ -126,19 +127,31 @@ export const createRateLimiter = (options = {}) => {
     const cpuCount = os.cpus().length;
     const loadPercentage = (cpuLoad / cpuCount) * 100;
 
-    // If system is under extreme load, throttle non-essential requests
-    if (
-      loadPercentage > 85 &&
-      keyPrefix !== "save-answer" &&
-      keyPrefix !== "exam-attempt"
-    ) {
-      if (Math.random() > 0.7) {
-        // Randomly throttle 30% of non-essential requests
-        return res.status(503).json({
-          status: "error",
-          message: "Server is under heavy load. Please try again shortly.",
-          retryAfter: 5,
-        });
+    // If system is under extreme load, prioritize critical operations
+    if (loadPercentage > 85) {
+      // Always allow batch save operations as they're more efficient
+      if (keyPrefix === "batch-answer") {
+        return next();
+      }
+
+      // Allow exam submissions and time updates even under heavy load
+      if (
+        keyPrefix === "exam-attempt" &&
+        (req.path.includes("/submit/") || req.path.includes("/time/"))
+      ) {
+        return next();
+      }
+
+      // Throttle non-essential requests
+      if (keyPrefix !== "save-answer" && keyPrefix !== "exam-attempt") {
+        if (Math.random() > 0.7) {
+          // Randomly throttle 30% of non-essential requests
+          return res.status(503).json({
+            status: "error",
+            message: "Server is under heavy load. Please try again shortly.",
+            retryAfter: 5,
+          });
+        }
       }
     }
 
@@ -181,6 +194,13 @@ export const saveAnswerLimiter = createRateLimiter({
   message: "You're answering questions too quickly. Please wait a moment.",
 });
 
+// New limiter specifically for batch operations
+export const batchAnswerLimiter = createRateLimiter({
+  windowMs: 30 * 1000, // 30 seconds
+  keyPrefix: "batch-answer",
+  message: "Too many batch operations. Please try again shortly.",
+});
+
 // Payment limiter remains more strict for security
 export const paymentLimiter = createRateLimiter({
   windowMs: 10 * 60 * 1000, // 10 minutes
@@ -194,6 +214,7 @@ export default {
   authLimiter,
   examAttemptLimiter,
   saveAnswerLimiter,
+  batchAnswerLimiter,
   paymentLimiter,
   createRateLimiter,
 };
