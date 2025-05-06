@@ -1,4 +1,3 @@
-// src/controllers/exam-attempt/start-exam.js - Optimized for high concurrency
 import ExamAttempt from "../../models/examAttempt.models.js";
 import Exam from "../../models/exam.models.js";
 import Question from "../../models/questions.models.js";
@@ -11,6 +10,7 @@ import { examService, questionService } from "../../services/redisService.js";
  * Controller to start a new exam attempt
  * Optimized for 1000+ concurrent users
  */
+
 const startExam = catchAsync(async (req, res, next) => {
   const { examId } = req.params;
 

@@ -1,4 +1,4 @@
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
+import { AppError } from "../../utils/errorHandler.js";
 import { getUserId } from "../../utils/cachedDbQueries.js";
 import Payment from "../../models/payment.models.js";
 import { BUNDLE_DEFINITIONS } from "../../utils/bundleDefinitions.js";
