@@ -206,6 +206,7 @@ const uploadBulkQuestions = catchAsync(async (req, res, next) => {
       options: q.options.map((option) => ({
         optionText: option,
       })),
+      correctAnswer: q.correctAnswer || "",
       difficultyLevel,
       subject,
       hasNegativeMarking:

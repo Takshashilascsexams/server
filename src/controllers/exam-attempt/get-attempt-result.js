@@ -10,6 +10,7 @@ import { getUserId } from "../../utils/cachedDbQueries.js";
  * - Shows detailed breakdown by question
  * - Includes all answer explanations
  */
+
 const getAttemptResult = catchAsync(async (req, res, next) => {
   const { attemptId } = req.params;
 
@@ -48,7 +49,6 @@ const getAttemptResult = catchAsync(async (req, res, next) => {
   const questionIds = attempt.answers.map((a) => a.questionId);
   const questions = await Question.find({ _id: { $in: questionIds } }).lean();
 
-  // src/controllers/exam-attempt/get-attempt-result.js (continued)
   const questionMap = {};
   questions.forEach((q) => {
     questionMap[q._id.toString()] = q;
