@@ -24,12 +24,6 @@ const startExam = catchAsync(async (req, res, next) => {
     return next(new AppError("User not found", 404));
   }
 
-  // Generate cache keys
-  const examCacheKey = `exam:${examId}`;
-  const questionsCacheKey = `exam:${examId}:questions`;
-  const accessCacheKey = `access:${userId}:${examId}`;
-  const attemptCacheKey = `attempt:${userId}:${examId}:active`;
-
   // Use a multi-phase approach to reduce database load
   let exam;
   let questions;
@@ -38,36 +32,31 @@ const startExam = catchAsync(async (req, res, next) => {
 
   // Phase 1: Check for an existing attempt in cache first
   try {
-    // Check if user already has an active attempt
-    existingAttempt = await examService.examCache.get(attemptCacheKey);
+    // Check if user already has an active attempt using the new helper method
+    existingAttempt = await examService.getExamAttempt(userId, examId);
     if (existingAttempt) {
-      try {
-        existingAttempt = JSON.parse(existingAttempt);
+      // No need to parse the result - it's already processed by the getExamAttempt method
 
-        // Verify the attempt still exists in the database
-        const attemptExists = await ExamAttempt.exists({
-          _id: existingAttempt.attemptId,
-          userId,
-          examId,
-          status: "in-progress",
+      // Verify the attempt still exists in the database
+      const attemptExists = await ExamAttempt.exists({
+        _id: existingAttempt.attemptId,
+        userId,
+        examId,
+        status: "in-progress",
+      });
+
+      if (attemptExists) {
+        return res.status(200).json({
+          status: "success",
+          message: "Continuing existing attempt",
+          data: {
+            attemptId: existingAttempt.attemptId,
+            timeRemaining:
+              existingAttempt.timeRemaining ||
+              existingAttempt.examDuration * 60,
+            resuming: true,
+          },
         });
-
-        if (attemptExists) {
-          return res.status(200).json({
-            status: "success",
-            message: "Continuing existing attempt",
-            data: {
-              attemptId: existingAttempt.attemptId,
-              timeRemaining:
-                existingAttempt.timeRemaining ||
-                existingAttempt.examDuration * 60,
-              resuming: true,
-            },
-          });
-        }
-      } catch (error) {
-        // Invalid cache data, will proceed to create new attempt
-        console.error("Error parsing existing attempt:", error);
       }
     }
   } catch (error) {
@@ -116,8 +105,9 @@ const startExam = catchAsync(async (req, res, next) => {
   // Phase 3: Check if user has access to the exam (for premium exams)
   if (exam.isPremium) {
     try {
-      // Try to get access status from cache
-      const cachedAccess = await examService.examCache.get(accessCacheKey);
+      // Try to get access status from cache using the new helper method
+      const cachedAccess = await examService.getExamAccess(userId, examId);
+
       if (cachedAccess !== null) {
         hasAccess = cachedAccess === "true";
       } else {
@@ -129,13 +119,8 @@ const startExam = catchAsync(async (req, res, next) => {
 
         hasAccess = accessResult.data.hasAccess;
 
-        // Cache for future requests (short TTL to maintain freshness)
-        await examService.examCache.set(
-          accessCacheKey,
-          hasAccess ? "true" : "false",
-          "EX",
-          5 * 60
-        );
+        // Cache for future requests using the new helper method
+        await examService.setExamAccess(userId, examId, hasAccess);
       }
     } catch (error) {
       console.error("Error checking exam access:", error);
@@ -168,16 +153,16 @@ const startExam = catchAsync(async (req, res, next) => {
     .lean();
 
   if (existingAttempt) {
-    // Cache the existing attempt for future requests
+    // Cache the existing attempt using the new helper method
     try {
-      await examService.examCache.set(
-        attemptCacheKey,
-        JSON.stringify({
+      await examService.setExamAttempt(
+        userId,
+        examId,
+        {
           attemptId: existingAttempt._id,
           timeRemaining: existingAttempt.timeRemaining,
           examDuration: exam.duration,
-        }),
-        "EX",
+        },
         exam.duration * 60 // TTL matches exam duration
       );
     } catch (error) {
@@ -199,13 +184,15 @@ const startExam = catchAsync(async (req, res, next) => {
   try {
     // Try to get from Redis cache first
     questions = await questionService.getQuestionsByExam(examId);
+
     if (!questions || questions.length === 0) {
       // Cache miss - get from database with optimized projection
       questions = await Question.find({
         examId,
         isActive: true,
       })
-        .select("_id marks hasNegativeMarking negativeMarks")
+        // .select("_id marks hasNegativeMarking negativeMarks")
+        .select("_id questionText marks type options statements")
         .lean();
 
       if (questions.length > 0) {
@@ -282,17 +269,17 @@ const startExam = catchAsync(async (req, res, next) => {
     unattempted: selectedQuestions.length,
   });
 
-  // Cache the new attempt for future requests
+  // Cache the new attempt using the new helper method
   try {
-    await examService.examCache.set(
-      attemptCacheKey,
-      JSON.stringify({
+    await examService.setExamAttempt(
+      userId,
+      examId,
+      {
         attemptId: newAttempt._id,
         timeRemaining,
         examDuration: exam.duration,
         createdAt: startTime.getTime(),
-      }),
-      "EX",
+      },
       exam.duration * 120 // 2x exam duration as safety margin
     );
   } catch (error) {

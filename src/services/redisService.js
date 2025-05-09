@@ -1,4 +1,3 @@
-// src/services/redisService.js - Optimized and consolidated
 import createRedisClient from "../utils/redisClient.js";
 
 // Create Redis clients with different prefixes for different data types
@@ -188,6 +187,54 @@ const examService = {
   setExam: async (examId, examData, ttl = DEFAULT_TTL) =>
     set(examCache, `exam:${examId}`, examData, ttl),
   deleteExam: async (examId) => del(examCache, `exam:${examId}`),
+
+  // New helper methods for exam access
+  getExamAccess: async (userId, examId) => {
+    const key = `access:${userId}:${examId}`;
+    return get(examCache, key);
+  },
+
+  setExamAccess: async (userId, examId, hasAccess, ttl = 5 * 60) => {
+    const key = `access:${userId}:${examId}`;
+    return set(examCache, key, hasAccess ? "true" : "false", ttl);
+  },
+
+  // New helper methods for exam attempts
+  getExamAttempt: async (userId, examId) => {
+    const key = `attempt:${userId}:${examId}:active`;
+    const result = await get(examCache, key);
+    // No need to parse the result - it's already processed by the get method
+    return result;
+  },
+
+  setExamAttempt: async (userId, examId, attemptData, ttl) => {
+    const key = `attempt:${userId}:${examId}:active`;
+    return set(examCache, key, JSON.stringify(attemptData), ttl);
+  },
+
+  // Method to store prepared questions for an attempt
+  setPreparedQuestions: async (
+    attemptId,
+    preparedQuestions,
+    examDetails,
+    ttl = 5 * 60
+  ) => {
+    return set(
+      examCache,
+      `prepared:${attemptId}:questions`,
+      {
+        questions: preparedQuestions,
+        exam: examDetails,
+        timestamp: Date.now(),
+      },
+      ttl
+    );
+  },
+
+  // Method to retrieve prepared questions for an attempt
+  getPreparedQuestions: async (attemptId) => {
+    return get(examCache, `prepared:${attemptId}:questions`);
+  },
 
   // Bulk operations for exams
   bulkGetExams: async (examIds) => {

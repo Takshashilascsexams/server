@@ -1,4 +1,3 @@
-// src/routes/exam-attempt.routes.js - Optimized for high concurrency
 import express from "express";
 import startExam from "../controllers/exam-attempt/start-exam.js";
 import getExamQuestions from "../controllers/exam-attempt/get-exam-question.js";

@@ -29,7 +29,7 @@ const ExamSchema = new mongoose.Schema(
     duration: {
       type: Number,
       required: [true, "Each exam must have a duration"],
-      min: [30, "Exam duration should not be less than 30 mins"],
+      min: [15, "Exam duration should not be less than 15 mins"],
     },
     totalQuestions: {
       type: Number,
@@ -53,8 +53,6 @@ const ExamSchema = new mongoose.Schema(
     passMarkPercentage: {
       type: Number,
       required: [true, "Each exam must have a pass mark percentage"],
-      min: [30, "Pass mark percentage cannot be less than 30%"],
-      max: [60, "Pass mark percentage cannot exceed 60"],
       default: 35,
     },
     difficultyLevel: {
@@ -127,6 +125,77 @@ const ExamSchema = new mongoose.Schema(
     toObject: { virtuals: true },
   }
 );
+
+// Then add a pre-save middleware to validate the percentage
+ExamSchema.pre("save", function (next) {
+  // Skip validation if totalMarks is not set
+  if (!this.totalMarks) {
+    return next();
+  }
+
+  // Calculate the minimum and maximum allowed percentage
+  const minPercentage = (35 / 100) * this.totalMarks;
+  const maxPercentage = (50 / 100) * this.totalMarks;
+
+  // Get the current percentage value (ensure it's a number)
+  const currentPercentage = Number(this.passMarkPercentage);
+
+  // Check if percentage is within the allowed range
+  if (currentPercentage < minPercentage || currentPercentage > maxPercentage) {
+    const error = new Error(
+      `Pass mark percentage must be between ${minPercentage}% and ${maxPercentage}% of total marks (${minMarks} to ${maxMarks} marks).`
+    );
+    return next(error);
+  }
+
+  next();
+});
+
+// Also add the same validation to the pre-update middleware
+ExamSchema.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate();
+
+  // If passMarkPercentage isn't being updated, skip validation
+  if (update.passMarkPercentage === undefined) {
+    return next();
+  }
+
+  // Get totalMarks (either from update or from the existing document)
+  let totalMarksPromise;
+  if (update.totalMarks !== undefined) {
+    totalMarksPromise = Promise.resolve(Number(update.totalMarks));
+  } else {
+    totalMarksPromise = this.model.findOne(this.getQuery()).then((doc) => {
+      return doc ? Number(doc.totalMarks) : null;
+    });
+  }
+
+  totalMarksPromise
+    .then((totalMarks) => {
+      if (!totalMarks) return next();
+
+      // Calculate the minimum and maximum allowed percentage
+      const minPercentage = (35 / 100) * this.totalMarks;
+      const maxPercentage = (50 / 100) * this.totalMarks;
+
+      // Get the current percentage value (ensure it's a number)
+      const currentPercentage = Number(update.passMarkPercentage);
+
+      // Check if percentage is within the allowed range
+      if (
+        currentPercentage < minPercentage ||
+        currentPercentage > maxPercentage
+      ) {
+        const error = new Error(
+          `Pass mark percentage must be between ${minPercentage}% and ${maxPercentage}% of total marks (${minMarks} to ${maxMarks} marks).`
+        );
+        return next(error);
+      }
+
+      next();
+    })
+    .catch((err) => next(err));
+});
 
 // Virtual populate for questions
 ExamSchema.virtual("questions", {

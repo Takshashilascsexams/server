@@ -1,9 +1,9 @@
+import mongoose from "mongoose";
 import ExamAttempt from "../../models/examAttempt.models.js";
-import Question from "../../models/questions.models.js";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import { getUserId } from "../../utils/cachedDbQueries.js";
-import { analyticsService, examService } from "../../services/redisService.js";
-import mongoose from "mongoose";
+import { examService } from "../../services/redisService.js";
+import { processExamSubmission } from "../../utils/processExamSubmission.js";
 
 /**
  * Controller to submit an exam and calculate results
@@ -123,10 +123,6 @@ const submitExam = catchAsync(async (req, res, next) => {
 
       // Get all answers from cache first
       const answerCacheKey = `attempt:${attemptId}:answers`;
-      const cachedAnswers = await examService.get(
-        examService.examCache,
-        answerCacheKey
-      );
 
       // Process evaluation in the background
       // This simulates moving the heavy computation to a queue
@@ -135,9 +131,13 @@ const submitExam = catchAsync(async (req, res, next) => {
         attemptId,
         attempt,
         exam,
-        cachedAnswers,
         session
       );
+
+      await session.commitTransaction();
+      session.endSession();
+
+      // const dbAttempt = await ExamAttempt.findById({ _id: attemptId });
 
       // Submit completed - cache result for future requests
       await examService.set(
@@ -194,152 +194,5 @@ const submitExam = catchAsync(async (req, res, next) => {
     return next(new AppError("Failed to process exam submission", 500));
   }
 });
-
-// Helper function to process exam submission
-// This could be moved to a separate worker in a production environment
-const processExamSubmission = async (
-  attemptId,
-  attempt,
-  exam,
-  cachedAnswers,
-  session
-) => {
-  // Get question IDs from attempt
-  const questionIds = attempt.answers.map((a) => a.questionId.toString());
-
-  // Fetch questions from database or cache
-  const questions = await Question.find({ _id: { $in: questionIds } })
-    .select("_id options type marks hasNegativeMarking negativeMarks")
-    .lean();
-
-  // Build question map for quick lookup
-  const questionMap = questions.reduce((map, q) => {
-    map[q._id.toString()] = q;
-    return map;
-  }, {});
-
-  // Calculate results
-  let totalMarks = 0;
-  let totalNegativeMarks = 0;
-  let correctAnswers = 0;
-  let wrongAnswers = 0;
-  let unattempted = 0;
-
-  // Evaluate each answer
-  const evaluatedAnswers = attempt.answers.map((answer) => {
-    const questionId = answer.questionId.toString();
-    const question = questionMap[questionId];
-
-    // Basic answer structure
-    const evaluatedAnswer = {
-      questionId: answer.questionId,
-      selectedOption: answer.selectedOption,
-      isCorrect: null,
-      marksEarned: 0,
-      negativeMarks: 0,
-      responseTime: answer.responseTime || 0,
-    };
-
-    // Skip if question not found
-    if (!question) {
-      unattempted++;
-      return evaluatedAnswer;
-    }
-
-    // Skip if no answer selected
-    if (answer.selectedOption === null) {
-      unattempted++;
-      return evaluatedAnswer;
-    }
-
-    // Evaluate answer
-    let isCorrect = false;
-
-    if (question.type === "MCQ" || question.type === "STATEMENT_BASED") {
-      // Find correct option
-      const correctOption = question.options.find((o) => o.isCorrect);
-      if (correctOption) {
-        isCorrect =
-          answer.selectedOption.toString() === correctOption._id.toString();
-      }
-    }
-
-    // Update evaluated answer
-    evaluatedAnswer.isCorrect = isCorrect;
-
-    if (isCorrect) {
-      evaluatedAnswer.marksEarned = question.marks || 1;
-      totalMarks += evaluatedAnswer.marksEarned;
-      correctAnswers++;
-    } else {
-      // Apply negative marking if enabled
-      if (exam.hasNegativeMarking && question.hasNegativeMarking) {
-        const negMarks =
-          question.negativeMarks || exam.negativeMarkingValue || 0;
-        evaluatedAnswer.negativeMarks = negMarks;
-        totalNegativeMarks += negMarks;
-      }
-      wrongAnswers++;
-    }
-
-    return evaluatedAnswer;
-  });
-
-  // Calculate final score
-  const finalScore = Math.max(0, totalMarks - totalNegativeMarks);
-
-  // Determine if passed
-  const passMark = (exam.totalMarks * exam.passMarkPercentage) / 100;
-  const hasPassed = finalScore >= passMark;
-
-  // Create submission result
-  const submissionResult = {
-    totalMarks,
-    negativeMarks: totalNegativeMarks,
-    finalScore,
-    correctAnswers,
-    wrongAnswers,
-    unattempted,
-    hasPassed,
-    status: "completed",
-    endTime: new Date(),
-    answers: evaluatedAnswers,
-  };
-
-  // Update the attempt in database
-  await ExamAttempt.findOneAndUpdate(
-    {
-      _id: attemptId,
-      status: { $in: ["in-progress", "timed-out"] },
-    },
-    { $set: submissionResult },
-    { new: true, session }
-  );
-
-  // Queue analytics update
-  await analyticsService.queueAnalyticsUpdate(exam._id.toString(), {
-    attempted: true,
-    completed: true,
-    passed: hasPassed,
-    failed: !hasPassed,
-    score: finalScore,
-  });
-
-  // Return result payload
-  return {
-    attemptId,
-    totalMarks,
-    negativeMarks: totalNegativeMarks,
-    finalScore,
-    correctAnswers,
-    wrongAnswers,
-    unattempted,
-    hasPassed,
-    passMarkPercentage: exam.passMarkPercentage,
-    passMark,
-    totalQuestions: attempt.answers.length,
-    scorePercentage: (finalScore / exam.totalMarks) * 100,
-  };
-};
 
 export default submitExam;

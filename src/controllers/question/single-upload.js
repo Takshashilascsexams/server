@@ -1,4 +1,3 @@
-// src/controllers/question/single-upload.js
 import Question from "../../models/questions.models.js";
 import { AppError, catchAsync } from "../../utils/errorHandler.js";
 import { checkExamExists, getUserId } from "../../utils/cachedDbQueries.js";

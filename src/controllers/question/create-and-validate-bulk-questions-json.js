@@ -76,6 +76,7 @@ const processJsonDocument = async (filePath) => {
       const formattedQuestion = {
         questionText: question.questionText,
         options: options,
+        correctAnswer: question.correctAnswer,
         type: type,
         explanation: question.explanation || "",
       };
@@ -198,34 +199,61 @@ const uploadBulkQuestions = catchAsync(async (req, res, next) => {
 
   try {
     // Prepare questions with common fields
-    const questionsToInsert = questionsArray.map((q) => ({
-      examId,
-      questionText: q.questionText,
-      marks: parseInt(marks, 10),
-      type: q.type,
-      options: q.options.map((option) => ({
-        optionText: option,
-      })),
-      correctAnswer: q.correctAnswer || "",
-      difficultyLevel,
-      subject,
-      hasNegativeMarking:
-        hasNegativeMarking === "true" || hasNegativeMarking === true,
-      negativeMarks: parseFloat(negativeMarks),
-      explanation: q.explanation || "",
-      isActive: true,
-      createdBy: userId,
-      // Add statements if present
-      ...(q.statements && q.statements.length > 0
-        ? {
-            statements: q.statements.map((statement, index) => ({
-              statementNumber: index + 1,
-              statementText: statement,
-            })),
-            statementInstruction: q.statementInstruction,
-          }
-        : {}),
-    }));
+    const questionsToInsert = questionsArray.map((q) => {
+      // Store correctAnswer text directly
+      const correctAnswerText = q.correctAnswer || "";
+
+      // Process options and set the correct option
+      const processedOptions = q.options.map((option) => {
+        // For string format options, check if it matches the correctAnswer
+        if (typeof option === "string") {
+          return {
+            optionText: option,
+            isCorrect: option === correctAnswerText,
+          };
+        }
+        // For object format options
+        else if (typeof option === "object" && option.optionText) {
+          return {
+            optionText: option.optionText,
+            isCorrect:
+              option.optionText === correctAnswerText ||
+              option.isCorrect ||
+              false,
+          };
+        }
+        return { optionText: option, isCorrect: false };
+      });
+
+      return {
+        examId,
+        questionText: q.questionText,
+        marks: parseInt(marks, 10),
+        type: q.type || "MCQ",
+        options: processedOptions,
+        correctAnswer: correctAnswerText,
+        difficultyLevel,
+        subject,
+        hasNegativeMarking:
+          hasNegativeMarking === "true" || hasNegativeMarking === true,
+        negativeMarks: parseFloat(negativeMarks),
+        explanation: q.explanation || "",
+        isActive: true,
+        createdBy: userId,
+        // Add statements if present
+        ...(q.statements && q.statements.length > 0
+          ? {
+              statements: q.statements.map((statement, index) => ({
+                statementNumber: index + 1,
+                statementText: statement,
+              })),
+              statementInstruction:
+                q.statementInstruction || q.statementInstructions,
+              type: "STATEMENT_BASED", // Override type for statement-based questions
+            }
+          : {}),
+      };
+    });
 
     // Insert all questions in the batch at once
     const insertedQuestions = await Question.insertMany(questionsToInsert, {
@@ -295,6 +323,7 @@ const validateBulkQuestions = catchAsync(async (req, res, next) => {
         statements: q.statements || [],
         statementInstruction: q.statementInstruction || "",
         options: q.options,
+        correctAnswer: q.correctAnswer,
       })),
     },
   });
