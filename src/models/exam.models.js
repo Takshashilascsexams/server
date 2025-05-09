@@ -143,7 +143,7 @@ ExamSchema.pre("save", function (next) {
   // Check if percentage is within the allowed range
   if (currentPercentage < minPercentage || currentPercentage > maxPercentage) {
     const error = new Error(
-      `Pass mark percentage must be between ${minPercentage}% and ${maxPercentage}% of total marks (${minMarks} to ${maxMarks} marks).`
+      `Pass mark percentage must be between ${minPercentage}% and ${maxPercentage}% of total marks.`
     );
     return next(error);
   }
@@ -187,7 +187,7 @@ ExamSchema.pre("findOneAndUpdate", function (next) {
         currentPercentage > maxPercentage
       ) {
         const error = new Error(
-          `Pass mark percentage must be between ${minPercentage}% and ${maxPercentage}% of total marks (${minMarks} to ${maxMarks} marks).`
+          `Pass mark percentage must be between ${minPercentage}% and ${maxPercentage}% of total marks.`
         );
         return next(error);
       }
