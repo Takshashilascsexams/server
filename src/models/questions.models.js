@@ -161,13 +161,16 @@ const questionSchema = new mongoose.Schema(
   }
 );
 
-// Existing indexes and other code...
-
-// Update the checkAnswer method to handle statement-based questions
+// Update the checkAnswer method to use correctAnswer field (storing option text)
 questionSchema.methods.checkAnswer = function (answer) {
   switch (this.type) {
     case "MCQ":
-      const correctOption = this.options.find((option) => option.isCorrect);
+      // Find the option with matching text to the correctAnswer field
+      const correctOption = this.options.find(
+        (option) => option.optionText === this.correctAnswer
+      );
+
+      // Compare user's answer (option ID) with the correct option's ID
       return correctOption && correctOption._id.toString() === answer;
 
     case "MULTIPLE_SELECT":
@@ -182,14 +185,19 @@ questionSchema.methods.checkAnswer = function (answer) {
 
     case "TRUE_FALSE":
       return (
-        this.options.find((option) => option.isCorrect).text.toLowerCase() ===
-        answer.toLowerCase()
+        this.options
+          .find(
+            (option) =>
+              option.optionText.toLowerCase() ===
+              this.correctAnswer.toLowerCase()
+          )
+          ._id.toString() === answer
       );
 
     case "STATEMENT_BASED":
-      // For statement-based questions, we use the same approach as MCQ
+      // For statement-based questions, find option matching correctAnswer
       const correctStatementOption = this.options.find(
-        (option) => option.isCorrect
+        (option) => option.optionText === this.correctAnswer
       );
       return (
         correctStatementOption &&

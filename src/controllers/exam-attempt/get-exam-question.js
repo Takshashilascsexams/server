@@ -1,5 +1,4 @@
 import ExamAttempt from "../../models/examAttempt.models.js";
-import Exam from "../../models/exam.models.js";
 import Question from "../../models/questions.models.js";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import { getUserId } from "../../utils/cachedDbQueries.js";
@@ -154,15 +153,10 @@ const getExamQuestions = catchAsync(async (req, res, next) => {
 
   // Cache the prepared questions for future requests
   try {
-    await examService.set(
-      examService.examCache,
-      `prepared:${attemptId}:questions`,
-      {
-        questions: preparedQuestions,
-        exam: examDetails,
-        timestamp: Date.now(),
-      },
-      5 * 60
+    await examService.setPreparedQuestions(
+      attemptId,
+      preparedQuestions,
+      examDetails
     );
   } catch (error) {
     console.error(

@@ -1,5 +1,4 @@
 import verifyToken from "../lib/verifyToken.js";
-import { authLimiter } from "./rateLimiterMiddleware.js";
 
 const authenticateUser = (req, res, next) => {
   try {
