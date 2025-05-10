@@ -19,7 +19,8 @@ import {
 import {
   examAttemptLimiter,
   saveAnswerLimiter,
-  createRateLimiter,
+  apiLimiter,
+  profileLimiter,
 } from "../middleware/rateLimiterMiddleware.js";
 
 const router = express.Router();
@@ -27,72 +28,38 @@ const router = express.Router();
 // Apply authentication middleware to all routes
 router.use(verifyUserIsSignedIn);
 
-// Custom rate limiters for specific high-volume operations
-const rulesLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  keyPrefix: "rules",
-  message: "Too many exam rules requests. Please wait before trying again.",
-});
+// Get exam rules before starting - Public-friendly with very generous limits
+router.get("/rules/:examId", examAttemptLimiter, getExamRules);
 
-const questionsLimiter = createRateLimiter({
-  windowMs: 30 * 1000, // 30 seconds
-  keyPrefix: "questions",
-  message: "Too many question requests. Please wait before trying again.",
-});
-
-const submitLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  keyPrefix: "submit",
-  message: "Too many submission attempts. Please wait before trying again.",
-});
-
-const timeLimiter = createRateLimiter({
-  windowMs: 5 * 1000, // 5 seconds
-  keyPrefix: "time-update",
-  message: "Too many time update requests. Please wait before trying again.",
-});
-
-// Get exam rules before starting - Apply rules-specific limiter
-router.get("/rules/:examId", rulesLimiter, getExamRules);
-
-// Start a new exam attempt - Apply exam attempt limiter
+// Start a new exam attempt - Allow plenty of capacity for 500 users
 router.post("/start/:examId", examAttemptLimiter, startExam);
 
-// Get questions for an active attempt - Apply questions-specific limiter
-router.get("/questions/:attemptId", questionsLimiter, getExamQuestions);
+// Get questions for an active attempt - Critical path during exam taking, very generous limits
+router.get("/questions/:attemptId", examAttemptLimiter, getExamQuestions);
 
-// Save answer for a question - Apply save answer limiter (higher limits)
+// Save answer for a question - Very high limits for 500 concurrent test-takers
 router.post("/answer/:attemptId/:questionId", saveAnswerLimiter, saveAnswer);
 
-// Update time remaining - Apply time-specific limiter
-router.put("/time/:attemptId", timeLimiter, updateTimeRemaining);
+// Update time remaining - Critical for exam state, very generous limits
+router.put("/time/:attemptId", examAttemptLimiter, updateTimeRemaining);
 
-// Submit exam - Apply submit-specific limiter
-router.post("/submit/:attemptId", submitLimiter, submitExam);
+// Submit exam - Critical operation, must not be rate-limited aggressively
+router.post("/submit/:attemptId", examAttemptLimiter, submitExam);
 
-// Get result of an attempt - Apply standard exam attempt limiter
-router.get("/result/:attemptId", examAttemptLimiter, getAttemptResult);
+// Get result of an attempt - Part of profile/history viewing, use profile limits
+router.get("/result/:attemptId", profileLimiter, getAttemptResult);
 
-// Get all attempts by user - Apply standard exam attempt limiter
-router.get("/user-attempts", examAttemptLimiter, getUserAttempts);
+// Get all attempts by user - Part of profile/history viewing, use profile limits
+router.get("/user-attempts", profileLimiter, getUserAttempts);
 
-// Get rankings for an exam - Apply standard exam attempt limiter
+// Get rankings for an exam - Public browsing operation, generous limits
 router.get("/rankings/:examId", examAttemptLimiter, getExamRankings);
 
 // Admin routes - require admin role
 router.use(verifyUserIsAdmin);
 
-// Admin-specific rate limiter (less restrictive for admins)
-const adminLimiter = createRateLimiter({
-  windowMs: 60 * 1000, // 1 minute
-  keyPrefix: "admin-exam",
-  message: "Too many admin operations. Please wait before trying again.",
-});
-
-// Calculate rankings for an exam
-router.post("/calculate-rankings/:examId", adminLimiter, calculateRankings);
-
-// Export rankings
-router.get("/export-rankings/:examId", adminLimiter, exportRankings);
+// Admin operations use standard API limiter
+router.post("/calculate-rankings/:examId", apiLimiter, calculateRankings);
+router.get("/export-rankings/:examId", apiLimiter, exportRankings);
 
 export default router;

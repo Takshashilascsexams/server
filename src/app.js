@@ -15,13 +15,13 @@ import xss from "xss-clean";
 import hpp from "hpp";
 import path from "path";
 import fs from "fs";
-import mongoose from "mongoose";
 import os from "os";
+import mongoose from "mongoose";
+import { monitorConnectionPool } from "./lib/connectDB.js";
 
 // Custom middleware and utilities
 import compressResponse from "./utils/compressResponse.js";
 import { AppError, errorController } from "./utils/errorHandler.js";
-import { apiLimiter } from "./middleware/rateLimiterMiddleware.js";
 
 // Services
 import { checkHealth, examService } from "./services/redisService.js";
@@ -62,6 +62,8 @@ const corsOptions = {
 // High concurrency settings
 const MAX_CONCURRENT_REQUESTS = 5000;
 let currentRequests = 0;
+const ENHANCED_MAX_CONCURRENT_REQUESTS = MAX_CONCURRENT_REQUESTS;
+const DB_CONNECTION_SAFETY_THRESHOLD = 180; // 90% of 200 max connections
 
 // ----------------------------------------
 // 3. ERROR HANDLING (PROCESS LEVEL)
@@ -134,7 +136,6 @@ app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 app.use(helmet()); // Set security HTTP headers
 app.use(compressResponse); // Response compression
-app.use(apiLimiter); // Global rate limiting
 app.use(morgan("tiny")); // Logging (development)
 
 // Body parsers
@@ -177,7 +178,7 @@ app.use((req, res, next) => {
 });
 
 // Circuit breaker for high load
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   // Skip health and static endpoints
   if (
     req.path === "/health" ||
@@ -187,16 +188,59 @@ app.use((req, res, next) => {
   }
 
   currentRequests++;
+  // Store the count in app.locals for visibility to other components
+  app.locals.currentRequests = currentRequests;
+
   res.on("finish", () => {
     currentRequests--;
+    app.locals.currentRequests = currentRequests;
   });
 
-  // Circuit breaker for extreme load
-  if (currentRequests > MAX_CONCURRENT_REQUESTS) {
+  // Check if we're approaching MongoDB connection pool limits
+  // Only check every 20 requests to avoid excessive monitoring
+  let dbConnectionStatus = { current: 0, maxPoolSize: 200 };
+  if (currentRequests % 20 === 0 || currentRequests > 450) {
+    try {
+      dbConnectionStatus = await monitorConnectionPool();
+    } catch (error) {
+      // Ignore monitoring errors and proceed with request
+      console.error("Failed to monitor DB connections:", error);
+    }
+  }
+
+  // Circuit breaker logic enhanced with DB connection awareness
+  const approaching_db_limit =
+    dbConnectionStatus.current >= DB_CONNECTION_SAFETY_THRESHOLD;
+
+  if (
+    currentRequests > ENHANCED_MAX_CONCURRENT_REQUESTS ||
+    approaching_db_limit
+  ) {
+    // Enhanced logging for operations monitoring
+    console.warn(
+      `Circuit breaker triggered: activeRequests=${currentRequests}, dbConnections=${dbConnectionStatus.current}/${dbConnectionStatus.maxPoolSize}`
+    );
+
+    // For exam-related critical paths, try to still process
+    const isExamCriticalPath =
+      req.path.includes("/api/v1/exam-attempt/submit") ||
+      req.path.includes("/api/v1/exam-attempt/time");
+
+    if (isExamCriticalPath && !approaching_db_limit) {
+      // Allow critical exam operations to proceed even under high load
+      // as long as we're not approaching DB connection limits
+      console.log(
+        `Allowing critical exam operation despite high load: ${req.path}`
+      );
+      next();
+      return;
+    }
+
     return res.status(503).json({
       status: "error",
-      message:
-        "Server is currently experiencing high load. Please try again shortly.",
+      message: approaching_db_limit
+        ? "Database connection pool is nearing capacity. Please try again shortly."
+        : "Server is currently experiencing high load. Please try again shortly.",
       retryAfter: 5,
     });
   }
@@ -211,6 +255,18 @@ app.use((req, res, next) => {
 // Health check route
 app.get("/health", async (req, res) => {
   const mongoStatus = mongoose.connection.readyState === 1;
+
+  // Get more detailed MongoDB connection info
+  let dbConnectionDetails = {
+    current: "unknown",
+    available: "unknown",
+    poolUtilization: "unknown",
+  };
+  try {
+    dbConnectionDetails = await monitorConnectionPool();
+  } catch (error) {
+    console.error("Failed to get DB connection details:", error);
+  }
 
   // Use cached Redis status to reduce check frequency
   let redisStatus = true;
@@ -256,6 +312,14 @@ app.get("/health", async (req, res) => {
     },
     uptime: process.uptime(),
     concurrentRequests: currentRequests,
+    database: {
+      connected: mongoStatus,
+      connectionPool: {
+        maxSize: 200,
+        estimated:
+          mongoose.connection.client.topology?.connections?.length || 0,
+      },
+    },
   };
 
   res.status(200).json({

@@ -5,8 +5,8 @@ export const connectDB = async () => {
     const { connection } = await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
-      maxPoolSize: 100, // Increase connection pool size for high concurrency
-      minPoolSize: 10, // Maintain minimum connections
+      maxPoolSize: 200, // Increased from 100 to 200 for 500 concurrent users
+      minPoolSize: 20, // Increased from 10 to 20 to maintain higher baseline connection count
       connectTimeoutMS: 30000,
       heartbeatFrequencyMS: 10000,
       // Add these optimizations for read preference and write concern
@@ -19,7 +19,9 @@ export const connectDB = async () => {
     });
 
     if (connection.readyState === 1) {
-      console.log("Connected to database.");
+      console.log(
+        "Connected to database with enlarged connection pool (maxPoolSize: 200)."
+      );
 
       // Set up additional connection optimizations
       mongoose.set("bufferCommands", false); // Disable command buffering for better failure handling
@@ -36,6 +38,22 @@ export const connectDB = async () => {
       mongoose.connection.on("reconnected", () => {
         console.log("MongoDB reconnected successfully");
       });
+
+      // Enhanced monitoring for connection pool
+      if (process.env.NODE_ENV !== "production") {
+        // Only log in non-production environments to avoid excessive logging
+        setInterval(async () => {
+          try {
+            // Use our Atlas-compatible monitoring function instead
+            const stats = await monitorConnectionPool();
+            console.log(
+              `MongoDB connection pool stats: current=${stats.current}, available=${stats.available}, utilization=${stats.poolUtilization}`
+            );
+          } catch (err) {
+            // Silently ignore errors in stats collection
+          }
+        }, 60000); // Check every minute
+      }
 
       return Promise.resolve(true);
     } else {
@@ -72,5 +90,32 @@ export const createIndexes = async () => {
   } catch (error) {
     console.error("Error creating MongoDB indexes:", error);
     return false;
+  }
+};
+
+// Function to monitor connection pool health
+export const monitorConnectionPool = async () => {
+  try {
+    // For MongoDB Atlas and other restricted environments where serverStatus
+    // is not allowed, we'll use a different approach
+
+    // Get a simpler estimate of connection status from the driver
+    // Note: This doesn't require admin privileges
+    const poolSize =
+      mongoose.connection.client.topology?.connections?.length || 0;
+    const maxPoolSize = 200; // The configured max pool size
+
+    return {
+      current: poolSize,
+      available: maxPoolSize - poolSize,
+      maxPoolSize: maxPoolSize,
+      poolUtilization: `${((poolSize / maxPoolSize) * 100).toFixed(2)}%`,
+    };
+  } catch (error) {
+    console.error("Error monitoring connection pool:", error);
+    return {
+      error: error.message,
+      maxPoolSize: 200,
+    };
   }
 };
