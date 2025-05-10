@@ -10,6 +10,7 @@ import calculateRankings from "../controllers/exam-attempt/calculate-rankings.js
 import getExamRankings from "../controllers/exam-attempt/get-exam-rankings.js";
 import exportRankings from "../controllers/exam-attempt/export-rankings.js";
 import getExamRules from "../controllers/exam-attempt/get-exam-rules.js";
+import checkExamStatus from "../controllers/exam-attempt/check-exam-status.js";
 
 import {
   verifyUserIsSignedIn,
@@ -45,6 +46,9 @@ router.put("/time/:attemptId", examAttemptLimiter, updateTimeRemaining);
 
 // Submit exam - Critical operation, must not be rate-limited aggressively
 router.post("/submit/:attemptId", examAttemptLimiter, submitExam);
+
+// Check exam status - Critical for UI state, use exam attempt limiter
+router.get("/status/:attemptId", examAttemptLimiter, checkExamStatus);
 
 // Get result of an attempt - Part of profile/history viewing, use profile limits
 router.get("/result/:attemptId", profileLimiter, getAttemptResult);

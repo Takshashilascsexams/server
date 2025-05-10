@@ -575,6 +575,10 @@ const attemptService = {
 
   deleteAttempt: async (attemptId) => del(examCache, `attempt:${attemptId}`),
 
+  getAttemptStatus: async (attemptId) => get(examCache, `status:${attemptId}`),
+  setAttemptStatus: async (attemptId, status, ttl = 60) =>
+    set(examCache, `status:${attemptId}`, status, ttl),
+
   batchGetQuestionsForAttempt: async (attemptId) => {
     try {
       // Get question IDs for this attempt
