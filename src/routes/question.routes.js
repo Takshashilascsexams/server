@@ -5,11 +5,15 @@ import {
   verifyUserIsSignedIn,
   verifyUserIsAdmin,
 } from "../middleware/authMiddleware.js";
+import { apiLimiter } from "../middleware/rateLimiterMiddleware.js";
 
 const router = express.Router();
 
 // Apply admin role validation to all routes
 router.use(verifyUserIsSignedIn, verifyUserIsAdmin);
+
+// Apply standard API limiter to admin question operations
+router.use(apiLimiter);
 
 // Route for uploading and creating bulk questions
 router.post("/bulk", bulkQuestionController.uploadBulkQuestions);

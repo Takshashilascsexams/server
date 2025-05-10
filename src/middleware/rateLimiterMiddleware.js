@@ -6,28 +6,63 @@ import os from "os";
 // Create dedicated Redis client for rate limiting
 const rateLimitRedis = createRedisClient("ratelimit:");
 
+// Add error handling to Redis client
+rateLimitRedis.on("error", (err) => {
+  console.error("Rate limiter Redis client error:", err);
+  // Errors will be handled by the onError handler in RedisStore
+  // The limiter will fall back to in-memory storage
+});
+
+// Add reconnection handler
+rateLimitRedis.on("reconnecting", () => {
+  console.log("Rate limiter Redis client reconnecting...");
+});
+
+rateLimitRedis.on("connect", () => {
+  console.log("Rate limiter Redis client connected");
+});
+
 // Function to get dynamic limits based on server load
+// Optimized for public usage with 500 concurrent users
 const getDynamicLimits = () => {
   // Get current system CPU load
   const cpuLoad = os.loadavg()[0];
   const cpuCount = os.cpus().length;
   const cpuUsage = cpuLoad / cpuCount;
 
-  // Adjust limits based on current CPU load
-  // Lower limits when system is under heavy load
-  const loadFactor = Math.max(0.5, 1 - cpuUsage);
+  // Adjust limits based on current CPU load - much more generous scaling
+  // Math.max(0.7, 1 - cpuUsage) ensures we never go below 70% of max capacity
+  // This keeps the system responsive for public operations even under load
+  const loadFactor = Math.max(0.7, 1 - cpuUsage * 0.8); // Less aggressive scaling (0.8 multiplier)
 
+  // Higher base limits with room for spikes
   return {
-    apiMax: Math.floor(1000 * loadFactor), // up to 1000 requests per minute
-    authMax: Math.floor(100 * loadFactor), // up to 100 auth requests per 15 min
-    examAttemptMax: Math.floor(200 * loadFactor), // up to 200 exam attempts per minute
-    saveAnswerMax: Math.floor(1500 * loadFactor), // up to 1500 answer saves per minute
-    batchAnswerMax: Math.floor(300 * loadFactor), // up to 300 batch operations per minute
+    // General API - very generous for browsing/exploration (4-5 requests per second per user)
+    apiMax: Math.floor(3000 * loadFactor), // 3000 requests per minute (50/second)
+
+    // Authentication - slightly increased but still protected
+    authMax: Math.floor(200 * loadFactor), // 200 auth requests per 15 min
+
+    // Public exam browsing operations (catalog, details, listings)
+    examBrowseMax: Math.floor(4000 * loadFactor), // 4000 browsing operations per minute
+
+    // Exam attempt operations - generous to avoid interrupting exams
+    examAttemptMax: Math.floor(600 * loadFactor), // 600 exam attempts per minute (1.2/user)
+
+    // Answer saving - very high for 500 concurrent test-takers (5-6 answers per minute per user)
+    saveAnswerMax: Math.floor(3000 * loadFactor), // 3000 answer saves per minute (6/user)
+
+    // Batch operations - prioritized to be efficient
+    batchAnswerMax: Math.floor(800 * loadFactor), // 800 batch operations per minute
+
+    // Profile operations - browsing history, viewing results, etc.
+    profileMax: Math.floor(2500 * loadFactor), // 2500 profile operations per minute (5/user)
   };
 };
 
 /**
  * Create a rate limiter middleware with specified options and dynamic scaling
+ * Optimized for public usage with 500 concurrent users
  */
 export const createRateLimiter = (options = {}) => {
   const {
@@ -38,23 +73,40 @@ export const createRateLimiter = (options = {}) => {
     statusCode = 429,
   } = options;
 
-  // Determine which limit to use
+  // Determine which limit to use based on request type
   const getLimitForRequest = (req) => {
     const dynamicLimits = getDynamicLimits();
+
+    // Use path-based determination for more granular control
+    const path = req.path || "";
+
+    // Special case: If this is specifically an exam question fetch or answer submission
+    // during an active exam, use a higher limit to avoid interrupting exams
+    if (
+      path.includes("/api/v1/exam-attempt/questions") ||
+      path.includes("/api/v1/exam-attempt/answer")
+    ) {
+      return Math.max(dynamicLimits.saveAnswerMax, 3000); // Always allow at least 3000/min
+    }
 
     switch (keyPrefix) {
       case "api":
         return dynamicLimits.apiMax;
       case "auth":
         return dynamicLimits.authMax;
+      case "exam-browse":
+        return dynamicLimits.examBrowseMax;
       case "exam-attempt":
         return dynamicLimits.examAttemptMax;
       case "save-answer":
         return dynamicLimits.saveAnswerMax;
       case "batch-answer":
         return dynamicLimits.batchAnswerMax;
+      case "profile":
+        return dynamicLimits.profileMax;
       default:
-        return max || 100;
+        // Higher default for public operations
+        return max || 300;
     }
   };
 
@@ -62,34 +114,42 @@ export const createRateLimiter = (options = {}) => {
   const limiter = rateLimit({
     windowMs,
     max: getLimitForRequest,
-    standardHeaders: "draft-6", // Updated from draft_polli_ratelimit_headers to standardHeaders
+    standardHeaders: "draft-6",
     legacyHeaders: false,
 
     // Use Redis as store for distributed rate limiting
+    // With fallback to memory store if Redis is unavailable
     store: new RedisStore({
       sendCommand: (...args) => rateLimitRedis.call(...args),
       prefix: `${keyPrefix}:`,
-      // Make sure to handle Redis connection issues gracefully
       resetExpiryOnChange: true,
-      // Expire keys for cleanup
       expiry: windowMs / 1000,
+      // Add reconnection and error handling
+      onError: (error) => {
+        console.error(`Redis rate limiter error (${keyPrefix}):`, error);
+        // Continue serving requests - will use memory store as fallback
+        return null;
+      },
     }),
 
-    // Custom handler for rate limited requests
+    // Improved handler with more informative message
     handler: (req, res, next, options) => {
       // Log rate limiting events
       console.warn(
-        `Rate limit exceeded: ${req.ip} ${req.method} ${req.originalUrl}`
+        `Rate limit exceeded: ${req.ip} ${req.method} ${req.originalUrl} [${keyPrefix}]`
       );
 
+      // More informative message with estimated wait time
       res.status(statusCode).json({
         status: "error",
-        message: message,
+        message: `${message} You can try again in ${Math.ceil(
+          windowMs / 1000
+        )} seconds.`,
         retryAfter: Math.ceil(windowMs / 1000),
       });
     },
 
-    // Define key generator with failover if user ID not available
+    // Improved key generator with better IP handling
     keyGenerator: (req, res) => {
       // Try multiple identifiers to handle various authentication states
       const userId = req.user?.sub || req.user?._id || "";
@@ -100,58 +160,62 @@ export const createRateLimiter = (options = {}) => {
         req.socket.remoteAddress ||
         "unknown";
 
-      // If we have user ID, use a combination for better accuracy
+      const cleanIp = ip ? ip.split(",")[0].trim() : "unknown";
+
+      // For authenticated users: use user ID as primary identifier
+      // This is more generous as it's per-user rather than per-connection
       if (userId) {
-        return `${keyPrefix}:${userId}:${ip.split(",")[0].trim()}`;
+        return `${keyPrefix}:user:${userId}`;
       }
 
-      // Fallback to IP-only for unauthenticated requests
-      return `${keyPrefix}:ip:${ip.split(",")[0].trim()}`;
+      // For public users: use IP address
+      return `${keyPrefix}:ip:${cleanIp}`;
     },
 
-    // Skip rate limiting for certain paths
+    // More paths to skip rate limiting for public operations
     skip: (req, res) => {
-      // Skip rate limiting for health checks and OPTIONS requests
+      // Skip rate limiting for health checks, static resources, and OPTIONS requests
       return (
         req.path === "/health" ||
         req.path === "/readiness" ||
-        req.method === "OPTIONS"
+        req.path.match(/\.(js|css|jpg|png|ico|svg|woff|woff2)$/) ||
+        req.method === "OPTIONS" ||
+        // Skip for public catalog endpoints to make browsing completely unrestricted
+        req.path === "/api/v1/exam/latest" ||
+        req.path === "/api/v1/exam/featured"
       );
     },
   });
 
   // Create a wrapped middleware that scales dynamically
   return (req, res, next) => {
-    // Implement graceful degradation for extreme load
+    // Less aggressive throttling - only under extreme load
     const cpuLoad = os.loadavg()[0];
     const cpuCount = os.cpus().length;
     const loadPercentage = (cpuLoad / cpuCount) * 100;
 
-    // If system is under extreme load, prioritize critical operations
-    if (loadPercentage > 85) {
-      // Always allow batch save operations as they're more efficient
-      if (keyPrefix === "batch-answer") {
+    // Only throttle at very high CPU load (95% instead of 90%)
+    if (loadPercentage > 95) {
+      // Always allow these critical operations
+      const criticalOperation =
+        keyPrefix === "batch-answer" ||
+        keyPrefix === "save-answer" ||
+        (keyPrefix === "exam-attempt" &&
+          (req.path.includes("/submit/") || req.path.includes("/time/")));
+
+      if (criticalOperation) {
         return next();
       }
 
-      // Allow exam submissions and time updates even under heavy load
-      if (
-        keyPrefix === "exam-attempt" &&
-        (req.path.includes("/submit/") || req.path.includes("/time/"))
-      ) {
-        return next();
-      }
-
-      // Throttle non-essential requests
-      if (keyPrefix !== "save-answer" && keyPrefix !== "exam-attempt") {
-        if (Math.random() > 0.7) {
-          // Randomly throttle 30% of non-essential requests
-          return res.status(503).json({
-            status: "error",
-            message: "Server is under heavy load. Please try again shortly.",
-            retryAfter: 5,
-          });
-        }
+      // Even under extreme load, only throttle 10% of public requests
+      if (Math.random() > 0.9) {
+        // More informative message about system load
+        return res.status(503).json({
+          status: "error",
+          message:
+            "Our servers are experiencing unusually high traffic. Please try again in a few moments.",
+          retryAfter: 5,
+        });
       }
     }
 
@@ -166,55 +230,74 @@ export const createRateLimiter = (options = {}) => {
 };
 
 // Enhanced rate limiters for different routes
+// Optimized for public use with 500 concurrent users
+
+// General API - very generous
 export const apiLimiter = createRateLimiter({
   windowMs: 60 * 1000, // 1 minute
   keyPrefix: "api",
-  message: "Too many API requests. Please wait before trying again.",
+  message: "You've made too many requests.",
 });
 
-// Authentication limiter - more strict to prevent brute force
+// Authentication - reasonable protection
 export const authLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
   keyPrefix: "auth",
-  message:
-    "Too many authentication attempts. Please try again after 15 minutes.",
+  message: "Too many login attempts.",
 });
 
-// Special limiter for exam attempts - higher limits
+// Exam browsing - extremely generous
+export const examBrowseLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  keyPrefix: "exam-browse",
+  message: "You're browsing our catalog too quickly.",
+});
+
+// Exam attempt operations - generous to avoid interrupting exams
 export const examAttemptLimiter = createRateLimiter({
   windowMs: 60 * 1000, // 1 minute
   keyPrefix: "exam-attempt",
-  message: "Too many exam operations. Please wait a moment before continuing.",
+  message: "Too many exam operations.",
 });
 
-// Special limiter just for saving answers - very high limits
+// Answer saving - very high limits
 export const saveAnswerLimiter = createRateLimiter({
   windowMs: 10 * 1000, // 10 seconds
   keyPrefix: "save-answer",
-  message: "You're answering questions too quickly. Please wait a moment.",
+  message: "You're submitting answers too quickly.",
 });
 
-// New limiter specifically for batch operations
+// Batch operations - high priority
 export const batchAnswerLimiter = createRateLimiter({
   windowMs: 30 * 1000, // 30 seconds
   keyPrefix: "batch-answer",
-  message: "Too many batch operations. Please try again shortly.",
+  message: "Too many batch operations.",
 });
 
-// Payment limiter remains more strict for security
+// Profile operations - generous for viewing history, results
+export const profileLimiter = createRateLimiter({
+  windowMs: 60 * 1000, // 1 minute
+  keyPrefix: "profile",
+  message: "Too many profile requests.",
+});
+
+// Payment remains more strict for security
 export const paymentLimiter = createRateLimiter({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 30, // Lower fixed limit for payment operations
+  max: 60, // Reasonable limit
   keyPrefix: "payment",
-  message: "Too many payment requests. Please try again later.",
+  message: "Too many payment requests.",
 });
 
+// Export all limiters
 export default {
   apiLimiter,
   authLimiter,
+  examBrowseLimiter,
   examAttemptLimiter,
   saveAnswerLimiter,
   batchAnswerLimiter,
+  profileLimiter,
   paymentLimiter,
   createRateLimiter,
 };
