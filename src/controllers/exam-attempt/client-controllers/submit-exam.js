@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
-import ExamAttempt from "../../models/examAttempt.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
-import { getUserId } from "../../utils/cachedDbQueries.js";
-import { examService } from "../../services/redisService.js";
-import { processExamSubmission } from "../../utils/processExamSubmission.js";
+import ExamAttempt from "../../../models/examAttempt.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
+import { getUserId } from "../../../utils/cachedDbQueries.js";
+import { examService } from "../../../services/redisService.js";
+import { processExamSubmission } from "../../../utils/processExamSubmission.js";
 
 /**
  * Controller to submit an exam and calculate results

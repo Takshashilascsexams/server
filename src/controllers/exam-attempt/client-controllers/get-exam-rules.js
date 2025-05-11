@@ -1,8 +1,8 @@
-import Exam from "../../models/exam.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
-import { examService } from "../../services/redisService.js";
-import { getUserId } from "../../utils/cachedDbQueries.js";
-import checkExamAccessFunc from "../payment/check-access.js";
+import Exam from "../../../models/exam.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
+import { examService } from "../../../services/redisService.js";
+import { getUserId } from "../../../utils/cachedDbQueries.js";
+import checkExamAccessFunc from "../../payment/check-access.js";
 
 /**
  * Controller to get exam rules and information before starting

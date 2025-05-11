@@ -1,12 +1,12 @@
 import express from "express";
 
 // Server controllers
-import createExam from "../controllers/exam/server-controllers/create-exam.js";
-import updateExam from "../controllers/exam/server-controllers/update-exam.js";
-import updateExamStatus from "../controllers/exam/server-controllers/update-exam-status.js";
-import deleteExam from "../controllers/exam/server-controllers/delete-exam.js";
-import getAllExams from "../controllers/exam/server-controllers/get-all-exams.js";
-import getSingleExam from "../controllers/exam/server-controllers/get-single-exam.js";
+import createExam from "../controllers/exam/admin-controllers/create-exam.js";
+import updateExam from "../controllers/exam/admin-controllers/update-exam.js";
+import updateExamStatus from "../controllers/exam/admin-controllers/update-exam-status.js";
+import deleteExam from "../controllers/exam/admin-controllers/delete-exam.js";
+import getAllExams from "../controllers/exam/admin-controllers/get-all-exams.js";
+import getExamDetails from "../controllers/exam/admin-controllers/get-exam-details.js";
 
 // Client controllers
 import getCategorizedExams from "../controllers/exam/client-controllers/get-categorized-exams.js";
@@ -46,7 +46,7 @@ router.use(verifyUserIsSignedIn, verifyUserIsAdmin, apiLimiter);
 // Exam CRUD operations
 router.get("/", getAllExams);
 router.post("/", createExam);
-router.get("/:id", getSingleExam);
+router.get("/:id/details", getExamDetails);
 router.put("/:id", updateExam);
 router.patch("/:id/status", updateExamStatus);
 router.delete("/:id", deleteExam);

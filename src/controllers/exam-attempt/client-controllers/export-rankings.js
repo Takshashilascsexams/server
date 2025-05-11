@@ -1,7 +1,7 @@
-import ExamAttempt from "../../models/examAttempt.models.js";
-import Exam from "../../models/exam.models.js";
-import User from "../../models/user.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
+import ExamAttempt from "../../../models/examAttempt.models.js";
+import Exam from "../../../models/exam.models.js";
+import User from "../../../models/user.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { createObjectCsvStringifier } from "csv-writer";
 
 /**

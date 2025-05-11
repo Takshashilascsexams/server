@@ -816,6 +816,28 @@ const analyticsService = {
       await Promise.allSettled(updatePromises);
     });
   },
+
+  bulkGetAnalytics: async (examIds) => {
+    try {
+      const analyticsPromises = examIds.map((id) =>
+        analyticsService.getAnalytics(id.toString())
+      );
+      const results = await Promise.all(analyticsPromises);
+
+      return results
+        .map((data, index) => {
+          if (!data) return null;
+          return {
+            examId: examIds[index].toString(),
+            data,
+          };
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.error("Redis bulk get analytics error:", error);
+      return [];
+    }
+  },
 };
 
 // Enhanced payment service with sharding
