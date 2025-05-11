@@ -5,7 +5,7 @@ import { examService } from "../../../services/redisService.js";
 import mongoose from "mongoose";
 
 const getExamDetails = catchAsync(async (req, res, next) => {
-  const { examId } = req.params;
+  const { id: examId } = req.params;
 
   if (!examId) {
     return next(new AppError("Exam ID is required", 400));
@@ -35,7 +35,7 @@ const getExamDetails = catchAsync(async (req, res, next) => {
 
   // Get attempt statistics
   const attemptStats = await ExamAttempt.aggregate([
-    { $match: { examId: mongoose.Types.ObjectId(examId) } },
+    { $match: { examId: new mongoose.Types.ObjectId(examId) } },
     {
       $group: {
         _id: "$status",
@@ -62,7 +62,7 @@ const getExamDetails = catchAsync(async (req, res, next) => {
   const passFailStats = await ExamAttempt.aggregate([
     {
       $match: {
-        examId: mongoose.Types.ObjectId(examId),
+        examId: new mongoose.Types.ObjectId(examId),
         status: "completed",
       },
     },
