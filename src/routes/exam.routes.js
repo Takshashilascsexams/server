@@ -7,6 +7,7 @@ import updateExamStatus from "../controllers/exam/admin-controllers/update-exam-
 import deleteExam from "../controllers/exam/admin-controllers/delete-exam.js";
 import getAllExams from "../controllers/exam/admin-controllers/get-all-exams.js";
 import getExamDetails from "../controllers/exam/admin-controllers/get-exam-details.js";
+import getExamById from "../controllers/exam/admin-controllers/get-exam-by-id.js";
 
 // Client controllers
 import getCategorizedExams from "../controllers/exam/client-controllers/get-categorized-exams.js";
@@ -46,6 +47,7 @@ router.use(verifyUserIsSignedIn, verifyUserIsAdmin, apiLimiter);
 // Exam CRUD operations
 router.get("/", getAllExams);
 router.post("/", createExam);
+router.get("/:id", getExamById);
 router.get("/:id/details", getExamDetails);
 router.put("/:id", updateExam);
 router.patch("/:id/status", updateExamStatus);
