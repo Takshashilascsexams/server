@@ -1,6 +1,6 @@
-import ExamAttempt from "../../models/examAttempt.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
-import { getUserId } from "../../utils/cachedDbQueries.js";
+import ExamAttempt from "../../../models/examAttempt.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
+import { getUserId } from "../../../utils/cachedDbQueries.js";
 
 /**
  * Controller to update time remaining for an exam attempt

@@ -1,7 +1,7 @@
-import ExamAttempt from "../../models/examAttempt.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
-import { getUserId } from "../../utils/cachedDbQueries.js";
-import { examService, attemptService } from "../../services/redisService.js";
+import ExamAttempt from "../../../models/examAttempt.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
+import { getUserId } from "../../../utils/cachedDbQueries.js";
+import { examService, attemptService } from "../../../services/redisService.js";
 
 /**
  * Controller to check the status of an exam attempt

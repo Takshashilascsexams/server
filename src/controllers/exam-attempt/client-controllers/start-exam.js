@@ -1,10 +1,13 @@
-import ExamAttempt from "../../models/examAttempt.models.js";
-import Exam from "../../models/exam.models.js";
-import Question from "../../models/questions.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
-import { getUserId } from "../../utils/cachedDbQueries.js";
-import checkExamAccess from "../payment/check-access.js";
-import { examService, questionService } from "../../services/redisService.js";
+import ExamAttempt from "../../../models/examAttempt.models.js";
+import Exam from "../../../models/exam.models.js";
+import Question from "../../../models/questions.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
+import { getUserId } from "../../../utils/cachedDbQueries.js";
+import checkExamAccess from "../../payment/check-access.js";
+import {
+  examService,
+  questionService,
+} from "../../../services/redisService.js";
 
 /**
  * Controller to start a new exam attempt

@@ -1,8 +1,8 @@
-import ExamAttempt from "../../models/examAttempt.models.js";
-import Exam from "../../models/exam.models.js";
-import Question from "../../models/questions.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
-import { getUserId } from "../../utils/cachedDbQueries.js";
+import ExamAttempt from "../../../models/examAttempt.models.js";
+import Exam from "../../../models/exam.models.js";
+import Question from "../../../models/questions.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
+import { getUserId } from "../../../utils/cachedDbQueries.js";
 
 /**
  * Controller to get detailed results of a completed attempt

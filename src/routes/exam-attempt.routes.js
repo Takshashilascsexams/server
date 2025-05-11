@@ -1,16 +1,22 @@
 import express from "express";
-import startExam from "../controllers/exam-attempt/start-exam.js";
-import getExamQuestions from "../controllers/exam-attempt/get-exam-question.js";
-import saveAnswer from "../controllers/exam-attempt/save-answer.js";
-import updateTimeRemaining from "../controllers/exam-attempt/update-time-remaining.js";
-import submitExam from "../controllers/exam-attempt/submit-exam.js";
-import getAttemptResult from "../controllers/exam-attempt/get-attempt-result.js";
-import getUserAttempts from "../controllers/exam-attempt/get-user-attempts.js";
-import calculateRankings from "../controllers/exam-attempt/calculate-rankings.js";
-import getExamRankings from "../controllers/exam-attempt/get-exam-rankings.js";
-import exportRankings from "../controllers/exam-attempt/export-rankings.js";
-import getExamRules from "../controllers/exam-attempt/get-exam-rules.js";
-import checkExamStatus from "../controllers/exam-attempt/check-exam-status.js";
+
+// client routes
+import startExam from "../controllers/exam-attempt/client-controllers/start-exam.js";
+import getExamQuestions from "../controllers/exam-attempt/client-controllers/get-exam-question.js";
+import saveAnswer from "../controllers/exam-attempt/client-controllers/save-answer.js";
+import updateTimeRemaining from "../controllers/exam-attempt/client-controllers/update-time-remaining.js";
+import submitExam from "../controllers/exam-attempt/client-controllers/submit-exam.js";
+import getAttemptResult from "../controllers/exam-attempt/client-controllers/get-attempt-result.js";
+import getUserAttempts from "../controllers/exam-attempt/client-controllers/get-user-attempts.js";
+import calculateRankings from "../controllers/exam-attempt/client-controllers/calculate-rankings.js";
+import getExamRankings from "../controllers/exam-attempt/client-controllers/get-exam-rankings.js";
+import exportRankings from "../controllers/exam-attempt/client-controllers/export-rankings.js";
+import getExamRules from "../controllers/exam-attempt/client-controllers/get-exam-rules.js";
+import checkExamStatus from "../controllers/exam-attempt/client-controllers/check-exam-status.js";
+
+// admin routes
+import getAdminRankings from "../controllers/exam-attempt/admin-controllers/get-admin-rankings.js";
+import getStudentDetailedResult from "../controllers/exam-attempt/admin-controllers/get-student-detailed-result.js";
 
 import {
   verifyUserIsSignedIn,
@@ -65,5 +71,7 @@ router.use(verifyUserIsAdmin);
 // Admin operations use standard API limiter
 router.post("/calculate-rankings/:examId", apiLimiter, calculateRankings);
 router.get("/export-rankings/:examId", apiLimiter, exportRankings);
+router.get("/admin-rankings/:examId", apiLimiter, getAdminRankings);
+router.get("/student-result/:attemptId", apiLimiter, getStudentDetailedResult);
 
 export default router;

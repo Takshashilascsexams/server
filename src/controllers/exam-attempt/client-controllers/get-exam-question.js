@@ -1,12 +1,12 @@
-import ExamAttempt from "../../models/examAttempt.models.js";
-import Question from "../../models/questions.models.js";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
-import { getUserId } from "../../utils/cachedDbQueries.js";
+import ExamAttempt from "../../../models/examAttempt.models.js";
+import Question from "../../../models/questions.models.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
+import { getUserId } from "../../../utils/cachedDbQueries.js";
 import {
   questionService,
   examService,
   attemptService,
-} from "../../services/redisService.js";
+} from "../../../services/redisService.js";
 
 /**
  * Controller to fetch questions for an active exam attempt
