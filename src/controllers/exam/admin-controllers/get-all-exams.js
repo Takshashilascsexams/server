@@ -1,8 +1,7 @@
-// src/controllers/exam/server-controllers/get-exam-dashboard.js
 import Exam from "../../../models/exam.models.js";
 import ExamAttempt from "../../../models/examAttempt.models.js";
 import ExamAnalytics from "../../../models/examAnalytics.models.js";
-import { catchAsync, AppError } from "../../../utils/errorHandler.js";
+import { catchAsync } from "../../../utils/errorHandler.js";
 import {
   examService,
   analyticsService,
@@ -11,28 +10,57 @@ import mongoose from "mongoose";
 
 const getExamDashboard = catchAsync(async (req, res, next) => {
   // Pagination
-  const page = req.query.page * 1 || 1;
-  const limit = req.query.limit * 1 || 10;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
 
-  // Sorting
-  const sortBy = req.query.sortBy || "createdAt";
+  // Sorting - ensure it's a valid field to prevent injection
+  const validSortFields = [
+    "createdAt",
+    "title",
+    "totalQuestions",
+    "totalMarks",
+    "category",
+  ];
+  const sortBy = validSortFields.includes(req.query.sortBy)
+    ? req.query.sortBy
+    : "createdAt";
   const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
   const sort = { [sortBy]: sortOrder };
 
   // Filtering
   const filterOptions = {};
-  if (req.query.category) filterOptions.category = req.query.category;
-  if (req.query.active !== undefined)
-    filterOptions.isActive = req.query.active === "true";
-  if (req.query.premium !== undefined)
-    filterOptions.isPremium = req.query.premium === "true";
+
+  // Handle active/inactive filter
+  if (req.query.active === "true") filterOptions.isActive = true;
+  if (req.query.active === "false") filterOptions.isActive = false;
+
+  // Handle premium filter
+  if (req.query.premium === "true") filterOptions.isPremium = true;
+
+  // Handle featured filter
+  if (req.query.featured === "true") filterOptions.isFeatured = true;
+
+  // Handle bundle filter - check for non-empty array
+  if (req.query.bundle === "true") {
+    filterOptions.bundleTags = { $exists: true, $not: { $size: 0 } };
+  }
+
+  // Handle search query
+  if (req.query.search) {
+    const searchRegex = new RegExp(req.query.search, "i");
+    filterOptions.$or = [
+      { title: searchRegex },
+      { description: searchRegex },
+      { category: searchRegex },
+    ];
+  }
 
   // Create cache key based on query parameters
   const cacheKey = `admin:dashboard:exams:${JSON.stringify({
     page,
     limit,
-    sort,
+    sort: { by: sortBy, order: sortOrder },
     filterOptions,
   })}`;
 
@@ -51,17 +79,33 @@ const getExamDashboard = catchAsync(async (req, res, next) => {
     // Continue to database query on cache error
   }
 
-  // Fetch exams with analytics
+  // Fetch exams with filters
   const exams = await Exam.find(filterOptions)
     .sort(sort)
     .skip(skip)
     .limit(limit)
     .select(
-      "_id title description category duration totalQuestions totalMarks isActive isPremium isFeatured createdAt"
+      "_id title description category duration totalQuestions totalMarks isActive isPremium isFeatured bundleTags createdAt"
     );
 
   // Get total count for pagination
   const total = await Exam.countDocuments(filterOptions);
+
+  if (total === 0) {
+    // Return empty results if no exams found
+    return res.status(200).json({
+      status: "success",
+      data: {
+        exams: [],
+        pagination: {
+          total: 0,
+          page,
+          pages: 0,
+          limit,
+        },
+      },
+    });
+  }
 
   // Get analytics for each exam (in batch for efficiency)
   const examIds = exams.map((exam) => exam._id);
@@ -69,10 +113,16 @@ const getExamDashboard = catchAsync(async (req, res, next) => {
   // Try to get analytics from cache first
   let analyticsMap = {};
   try {
-    // Using existing cache methods
-    const analyticsPromises = examIds.map((id) =>
-      analyticsService.getAnalytics(id.toString())
-    );
+    // Using existing cache methods in parallel for better performance
+    const analyticsPromises = examIds.map((id) => {
+      try {
+        return analyticsService.getAnalytics(id.toString());
+      } catch (err) {
+        console.error(`Error getting analytics for exam ${id}:`, err);
+        return null;
+      }
+    });
+
     const analyticsResults = await Promise.all(analyticsPromises);
 
     // Build map of examId to analytics
@@ -88,55 +138,72 @@ const getExamDashboard = catchAsync(async (req, res, next) => {
   // For any missing analytics, fetch from database
   const missingExamIds = examIds.filter((id) => !analyticsMap[id.toString()]);
   if (missingExamIds.length > 0) {
-    const dbAnalytics = await ExamAnalytics.find({
-      examId: { $in: missingExamIds },
-    }).lean();
+    try {
+      const dbAnalytics = await ExamAnalytics.find({
+        examId: { $in: missingExamIds },
+      }).lean();
 
-    // Add to map and cache
-    dbAnalytics.forEach((analytics) => {
-      analyticsMap[analytics.examId.toString()] = analytics;
-      // Cache for future requests
-      analyticsService.setAnalytics(analytics.examId.toString(), analytics);
-    });
+      // Add to map and cache
+      dbAnalytics.forEach((analytics) => {
+        analyticsMap[analytics.examId.toString()] = analytics;
+        // Cache for future requests
+        analyticsService.setAnalytics(analytics.examId.toString(), analytics);
+      });
+    } catch (error) {
+      console.error("Error fetching analytics from database:", error);
+    }
   }
 
   // Get attempt counts for each exam
-  const attemptCounts = await ExamAttempt.aggregate([
-    {
-      $match: {
-        examId: { $in: examIds.map((id) => mongoose.Types.ObjectId(id)) },
-      },
-    },
-    {
-      $group: {
-        _id: "$examId",
-        totalAttempted: { $sum: 1 },
-        completed: {
-          $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] },
-        },
-        passed: { $sum: { $cond: [{ $eq: ["$hasPassed", true] }, 1, 0] } },
-        failed: {
-          $sum: {
-            $cond: [
-              {
-                $and: [
-                  { $eq: ["$status", "completed"] },
-                  { $eq: ["$hasPassed", false] },
-                ],
-              },
-              1,
-              0,
-            ],
+  let attemptCountMap = {};
+  try {
+    // Convert examIds to ObjectIds safely
+    const validExamObjectIds = examIds
+      .map((id) => {
+        try {
+          return new mongoose.Types.ObjectId(id);
+        } catch (err) {
+          console.error(`Invalid ObjectId: ${id}`);
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    const attemptCounts = await ExamAttempt.aggregate([
+      { $match: { examId: { $in: validExamObjectIds } } },
+      {
+        $group: {
+          _id: "$examId",
+          totalAttempted: { $sum: 1 },
+          completed: {
+            $sum: { $cond: [{ $eq: ["$status", "completed"] }, 1, 0] },
+          },
+          passed: { $sum: { $cond: [{ $eq: ["$hasPassed", true] }, 1, 0] } },
+          failed: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$status", "completed"] },
+                    { $eq: ["$hasPassed", false] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
           },
         },
       },
-    },
-  ]);
+    ]);
 
-  const attemptCountMap = attemptCounts.reduce((map, item) => {
-    map[item._id.toString()] = item;
-    return map;
-  }, {});
+    attemptCountMap = attemptCounts.reduce((map, item) => {
+      map[item._id.toString()] = item;
+      return map;
+    }, {});
+  } catch (error) {
+    console.error("Error getting attempt counts:", error);
+  }
 
   // Combine exam data with analytics
   const examData = exams.map((exam) => {

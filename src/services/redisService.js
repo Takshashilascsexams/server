@@ -297,38 +297,6 @@ const examService = {
     return del(examCache, `categorized:${shardId}:${userId}`);
   },
 
-  // Clear all user-specific caches with proper sharding
-  clearCategorizedExamsCache: async () => {
-    // Clear each shard separately to reduce Redis blocking
-    const clearPromises = [];
-    for (let i = 0; i < 16; i++) {
-      clearPromises.push(clearPattern(examCache, `categorized:${i}:*`, 200));
-    }
-    await Promise.allSettled(clearPromises);
-    return true;
-  },
-
-  // General cache clearing with improved performance
-  clearExamCache: async () => {
-    // Split the work to avoid blocking Redis
-    const tasks = [
-      clearPattern(examCache, "exam:*", 500),
-      clearCategorizedExamsCache(),
-      clearPattern(examCache, "latest:*", 100),
-    ];
-
-    await Promise.allSettled(tasks);
-    return true;
-  },
-
-  checkExamExists: async (examId) => {
-    const exists = await get(examCache, `exists:${examId}`);
-    return exists !== null ? exists : null;
-  },
-
-  setExamExists: async (examId, exists) =>
-    set(examCache, `exists:${examId}`, exists, DEFAULT_TTL),
-
   // Client methods with improved batch handling
   getLatestExams: async (category, limit) =>
     get(examCache, `latest:${category}:${limit}`),
@@ -376,6 +344,37 @@ const examService = {
   getExamRules: async (examId) => get(examCache, `rules:${examId}`),
   setExamRules: async (examId, rulesData, ttl = 24 * 60 * 60) =>
     set(examCache, `rules:${examId}`, rulesData, ttl),
+
+  checkExamExists: async (examId) => {
+    const exists = await get(examCache, `exists:${examId}`);
+    return exists !== null ? exists : null;
+  },
+
+  setExamExists: async (examId, exists) =>
+    set(examCache, `exists:${examId}`, exists, DEFAULT_TTL),
+};
+
+// Add methods that reference other methods separately
+examService.clearCategorizedExamsCache = async () => {
+  // Clear each shard separately to reduce Redis blocking
+  const clearPromises = [];
+  for (let i = 0; i < 16; i++) {
+    clearPromises.push(clearPattern(examCache, `categorized:${i}:*`, 200));
+  }
+  await Promise.allSettled(clearPromises);
+  return true;
+};
+
+examService.clearExamCache = async () => {
+  // Split the work to avoid blocking Redis
+  const tasks = [
+    clearPattern(examCache, "exam:*", 500),
+    examService.clearCategorizedExamsCache(), // Now safe to use
+    clearPattern(examCache, "latest:*", 100),
+  ];
+
+  await Promise.allSettled(tasks);
+  return true;
 };
 
 // User specific cache methods
