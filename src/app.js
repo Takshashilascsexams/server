@@ -1,5 +1,3 @@
-// app.js - Structured for high concurrency with 1,000+ users
-
 // ----------------------------------------
 // 1. IMPORTS
 // ----------------------------------------
@@ -22,7 +20,6 @@ import { monitorConnectionPool } from "./lib/connectDB.js";
 // Custom middleware and utilities
 import compressResponse from "./utils/compressResponse.js";
 import { AppError, errorController } from "./utils/errorHandler.js";
-import servePublicationsMiddleware from "./middleware/servePublicationsMiddleware.js";
 
 // Services
 import { checkHealth, examService } from "./services/redisService.js";
@@ -342,11 +339,6 @@ app.get("/health", async (req, res) => {
 app.get("/", (req, res) => {
   res.send("Exam Portal API is running");
 });
-
-// Serve PDF files in development mode
-if (process.env.NODE_ENV !== "production") {
-  app.use("/uploads/publications", servePublicationsMiddleware);
-}
 
 // API routes
 app.use("/api/v1/exam", examRoute);
