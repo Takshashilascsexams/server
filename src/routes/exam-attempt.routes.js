@@ -17,6 +17,7 @@ import checkExamStatus from "../controllers/exam-attempt/client-controllers/chec
 // admin routes
 import getAdminRankings from "../controllers/exam-attempt/admin-controllers/get-admin-rankings.js";
 import getStudentDetailedResult from "../controllers/exam-attempt/admin-controllers/get-student-detailed-result.js";
+import getExamResults from "../controllers/exam-attempt/admin-controllers/get-exam-results.js";
 
 import {
   verifyUserIsSignedIn,
@@ -73,5 +74,6 @@ router.post("/calculate-rankings/:examId", apiLimiter, calculateRankings);
 router.get("/export-rankings/:examId", apiLimiter, exportRankings);
 router.get("/admin-rankings/:examId", apiLimiter, getAdminRankings);
 router.get("/student-result/:attemptId", apiLimiter, getStudentDetailedResult);
+router.get("/exam/:examId/results", apiLimiter, getExamResults);
 
 export default router;
