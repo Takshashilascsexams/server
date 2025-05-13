@@ -25,6 +25,7 @@ import { AppError, errorController } from "./utils/errorHandler.js";
 import { checkHealth, examService } from "./services/redisService.js";
 
 // Routes
+import userRoute from "./routes/user.routes.js";
 import examRoute from "./routes/exam.routes.js";
 import questionsRoute from "./routes/question.routes.js";
 import paymentRoute from "./routes/payment.routes.js";
@@ -341,6 +342,7 @@ app.get("/", (req, res) => {
 });
 
 // API routes
+app.use("/api/v1/users", userRoute);
 app.use("/api/v1/exam", examRoute);
 app.use("/api/v1/questions", questionsRoute);
 app.use("/api/v1/payments", paymentRoute);
