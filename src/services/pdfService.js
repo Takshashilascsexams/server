@@ -12,11 +12,11 @@ import {
 
 // Configure storage options
 const isProduction = process.env.NODE_ENV === "production";
-const uploadDir = path.join(process.cwd(), "uploads", "publications");
+const publicPath = path.join(process.cwd(), "public", "publications");
 
-// Ensure uploads directory exists
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Ensure publications directory exists
+if (!fs.existsSync(publicPath)) {
+  fs.mkdirSync(publicPath, { recursive: true });
 }
 
 // Initialize S3 client for production
@@ -49,7 +49,7 @@ export const generateRankingsPDF = async (exam, rankings, stats) => {
     /\s+/g,
     "-"
   )}-results-${timestamp}.pdf`;
-  const filePath = path.join(uploadDir, fileName);
+  const filePath = path.join(publicPath, fileName);
 
   // Create PDF document
   const doc = new PDFDocument({
@@ -78,7 +78,7 @@ export const generateRankingsPDF = async (exam, rankings, stats) => {
     .text(`Duration: ${exam.duration} minutes`)
     .text(`Total Questions: ${exam.totalQuestions}`)
     .text(`Total Marks: ${exam.totalMarks}`)
-    .text(`Pass Mark: ${exam.passMarkPercentage}%`)
+    .text(`Pass Mark: ${exam.passMarkPercentage}`) // Removed % symbol
     .text(`Date Generated: ${new Date().toLocaleString()}`);
   doc.moveDown(1);
 
@@ -96,6 +96,14 @@ export const generateRankingsPDF = async (exam, rankings, stats) => {
   // Add rankings table header
   doc.fontSize(12).font("Helvetica-Bold").text("Student Rankings:");
   doc.moveDown(0.5);
+
+  // Sort rankings by score in descending order to ensure highest scorers are at the top
+  const sortedRankings = [...rankings].sort((a, b) => b.score - a.score);
+
+  // Update the rankings sequentially after sorting
+  sortedRankings.forEach((student, index) => {
+    student.rank = index + 1;
+  });
 
   // Set initial positions for table
   const startX = 50;
@@ -136,7 +144,7 @@ export const generateRankingsPDF = async (exam, rankings, stats) => {
 
   // Draw table rows
   doc.font("Helvetica").fontSize(10);
-  rankings.forEach((student, index) => {
+  sortedRankings.forEach((student, index) => {
     // Check if we need a new page
     if (startY > 750) {
       doc.addPage();
@@ -208,7 +216,8 @@ export const generateRankingsPDF = async (exam, rankings, stats) => {
     startY += 20;
   });
 
-  // Add footer
+  // Add footer with increased space before the disclaimer
+  doc.moveDown(4); // Added more space before the disclaimer
   doc
     .fontSize(8)
     .font("Helvetica-Oblique")
@@ -216,7 +225,6 @@ export const generateRankingsPDF = async (exam, rankings, stats) => {
       "Disclaimer: This report is generated automatically and the results are based on the performance in this exam only.",
       {
         align: "center",
-        bottom: 30,
       }
     );
 
@@ -269,7 +277,7 @@ export const uploadFile = async (filePath, fileName) => {
     }
   } else {
     // In development, use local path
-    return `/uploads/publications/${fileName}`;
+    return `/publications/${fileName}`;
   }
 };
 
@@ -282,13 +290,11 @@ export const uploadFile = async (filePath, fileName) => {
 export const generateSignedUrl = async (key, expiresIn = 86400) => {
   if (!isProduction) {
     // In development, return a local path
-    return `/uploads/publications/${path.basename(key)}`;
+    return `/publications/${path.basename(key)}`;
   }
 
   const bucketName = process.env.AWS_S3_BUCKET;
-  // CORRECTION: Use GetObjectCommand instead of PutObjectCommand
   const command = new GetObjectCommand({
-    // Changed from PutObjectCommand
     Bucket: bucketName,
     Key: key,
   });
@@ -322,7 +328,7 @@ export const deleteFile = async (fileUrl) => {
   } else {
     // In development, remove local file
     try {
-      const filePath = path.join(process.cwd(), fileUrl);
+      const filePath = path.join(process.cwd(), "public", fileUrl);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
