@@ -1,13 +1,7 @@
-// src/workers/index.js - Enhanced worker process for background tasks
 import { connectDB } from "../lib/connectDB.js";
-import {
-  analyticsService,
-  processBatchQueue,
-  attemptService,
-} from "../services/redisService.js";
+import { analyticsService, attemptService } from "../services/redisService.js";
 import ExamAnalytics from "../models/examAnalytics.models.js";
 import ExamAttempt from "../models/examAttempt.models.js";
-import Question from "../models/questions.models.js";
 import mongoose from "mongoose";
 
 // Connect to databases
@@ -199,18 +193,26 @@ const processBatchedAnswers = async () => {
           }
         );
 
-        // Update cache if applicable
-        await attemptService.setAnswerCache(
-          attemptId,
-          questionId,
-          selectedOption,
-          responseTime || 0
-        );
+        // Update cache - CORRECTION: Use proper method
+        const cacheKey = `attempt:${attemptId}:answers`;
+        const currentAnswers =
+          (await attemptService.examCache.get(cacheKey)) || {};
+        const updatedAnswers = {
+          ...currentAnswers,
+          [questionId]: { selectedOption, responseTime: responseTime || 0 },
+        };
+
+        await attemptService.examCache.set(
+          cacheKey,
+          JSON.stringify(updatedAnswers),
+          "EX",
+          300
+        ); // 5 minutes
       }
     };
 
     // Process batches
-    return await attemptService.attemptCache.batchProcess(
+    return await attemptService.examCache.batchProcess(
       batchQueueKey,
       processor,
       { batchSize: 100 }
@@ -242,7 +244,11 @@ const syncActiveExamTimers = async () => {
     for (const exam of activeExams) {
       try {
         // Get latest time from cache
-        const cachedTime = await attemptService.getTimeRemaining(exam._id);
+        const cacheKey = `status:${exam._id}`;
+        const cachedTime = await attemptService.get(
+          attemptService.examCache,
+          cacheKey
+        );
 
         if (cachedTime !== null && cachedTime !== exam.timeRemaining) {
           // Update database with cached time
