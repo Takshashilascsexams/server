@@ -130,6 +130,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
           bundleDef,
           userAccessMap
         );
+
         bundles.push(bundle);
       }
     });

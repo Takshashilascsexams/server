@@ -22,6 +22,7 @@ import { monitorConnectionPool } from "./lib/connectDB.js";
 // Custom middleware and utilities
 import compressResponse from "./utils/compressResponse.js";
 import { AppError, errorController } from "./utils/errorHandler.js";
+import servePublicationsMiddleware from "./middleware/servePublicationsMiddleware.js";
 
 // Services
 import { checkHealth, examService } from "./services/redisService.js";
@@ -32,6 +33,7 @@ import questionsRoute from "./routes/question.routes.js";
 import paymentRoute from "./routes/payment.routes.js";
 import bundleExamRoute from "./routes/bundle-exam.routes.js";
 import examAttemptRoute from "./routes/exam-attempt.routes.js";
+import publicationsRoute from "./routes/publications.routes.js";
 
 // ----------------------------------------
 // 2. CONFIGURATION
@@ -341,12 +343,18 @@ app.get("/", (req, res) => {
   res.send("Exam Portal API is running");
 });
 
+// Serve PDF files in development mode
+if (process.env.NODE_ENV !== "production") {
+  app.use("/uploads/publications", servePublicationsMiddleware);
+}
+
 // API routes
 app.use("/api/v1/exam", examRoute);
 app.use("/api/v1/questions", questionsRoute);
 app.use("/api/v1/payments", paymentRoute);
 app.use("/api/v1/bundle-exam", bundleExamRoute);
 app.use("/api/v1/exam-attempt", examAttemptRoute);
+app.use("/api/v1/publications", publicationsRoute);
 
 // ----------------------------------------
 // 6. ERROR HANDLING (APPLICATION LEVEL)

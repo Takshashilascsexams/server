@@ -7,6 +7,7 @@ const questionCache = createRedisClient("question:");
 const analyticsCache = createRedisClient("analytics:");
 const paymentCache = createRedisClient("payment:");
 const batchQueue = createRedisClient("batch:");
+const publicationCache = createRedisClient("publication:");
 
 // Default TTL (Time To Live) for cached items in seconds
 const DEFAULT_TTL = 60 * 60;
@@ -896,6 +897,49 @@ const paymentService = {
   },
 };
 
+const publicationService = {
+  // Get all active publications
+  getActivePublications: async () => {
+    return get(publicationCache, "active:publications");
+  },
+
+  // Set active publications cache
+  setActivePublications: async (publications, ttl = 60 * 15) => {
+    // 15 minutes
+    return set(publicationCache, "active:publications", publications, ttl);
+  },
+
+  // Get publications for a specific exam
+  getExamPublications: async (examId) => {
+    return get(publicationCache, `exam:${examId}:publications`);
+  },
+
+  // Set publications for a specific exam
+  setExamPublications: async (examId, publications, ttl = 60 * 5) => {
+    // 5 minutes
+    return set(
+      publicationCache,
+      `exam:${examId}:publications`,
+      publications,
+      ttl
+    );
+  },
+
+  // Clear exam publications cache
+  clearExamPublications: async (examId) => {
+    return del(publicationCache, `exam:${examId}:publications`);
+  },
+
+  // Clear all publications cache
+  clearAllPublicationsCache: async () => {
+    await Promise.all([
+      del(publicationCache, "active:publications"),
+      clearPattern(publicationCache, "exam:*:publications"),
+    ]);
+    return true;
+  },
+};
+
 // Health check method with improved diagnostics
 const checkHealth = async () => {
   try {
@@ -1011,4 +1055,6 @@ export {
   checkHealth,
   addToBatchQueue,
   processBatchQueue,
+  publicationService,
+  publicationCache,
 };
