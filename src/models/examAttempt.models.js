@@ -91,6 +91,10 @@ const ExamAttemptSchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+    lastDbSync: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,

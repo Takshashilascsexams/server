@@ -2,7 +2,7 @@
 // This could be moved to a separate worker in a production environment
 import Question from "../models/questions.models.js";
 import ExamAttempt from "../models/examAttempt.models.js";
-import { analyticsService } from "../services/redisService.js";
+import { analyticsService, attemptService } from "../services/redisService.js";
 
 export const processExamSubmission = async (
   attemptId,
@@ -132,6 +132,8 @@ export const processExamSubmission = async (
     finalScore,
     correctAnswers,
     wrongAnswers,
+    timeRemaining:
+      attempt.status === "timed-out" ? 0 : attempt.currentTimeRemaining || 0,
     unattempted,
     hasPassed,
     status: "completed",
@@ -148,6 +150,26 @@ export const processExamSubmission = async (
     { $set: submissionResult },
     { new: true, session }
   );
+
+  try {
+    // Use your attemptService's setAttemptTimer method
+    await attemptService.setAttemptTimer(
+      attemptId,
+      {
+        timeRemaining: 0,
+        absoluteEndTime: Date.now(), // End time is now
+        lastSyncTime: Date.now(),
+        completed: true,
+      },
+      300 // Keep for 5 minutes as reference
+    );
+  } catch (redisError) {
+    console.log(
+      "Non-critical error updating Redis timer on submission:",
+      redisError
+    );
+    // Non-critical error, continue processing
+  }
 
   // Queue analytics update
   await analyticsService.queueAnalyticsUpdate(exam._id.toString(), {

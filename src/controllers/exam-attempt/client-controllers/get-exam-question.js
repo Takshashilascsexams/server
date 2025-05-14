@@ -172,6 +172,7 @@ const getExamQuestions = catchAsync(async (req, res, next) => {
         id: attempt._id,
         timeRemaining: attempt.timeRemaining,
         status: attempt.status,
+        serverTime: Date.now(), // Add server time
       },
       exam: examDetails,
       questions: preparedQuestions,
