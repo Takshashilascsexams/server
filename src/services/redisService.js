@@ -703,8 +703,6 @@ const attemptService = {
   // Clear exam rankings
   clearExamRankings: async (examId) => del(examCache, `rankings:${examId}`),
 
-  // Removed duplicate exam rules methods (kept in examService)
-
   // Optimized for multiple concurrent saves (used by submit-exam)
   incrementAttemptCount: async (examId) => {
     try {
@@ -719,6 +717,93 @@ const attemptService = {
         error
       );
       return null;
+    }
+  },
+
+  // Add these methods to the attemptService object
+
+  getAttemptTimer: async (attemptId) => {
+    return get(examCache, `timer:${attemptId}`);
+  },
+
+  setAttemptTimer: async (attemptId, timerData, ttl = 3600) => {
+    return set(examCache, `timer:${attemptId}`, timerData, ttl);
+  },
+
+  // Calculate current time remaining based on absolute end time
+  getCurrentTimeRemaining: async (attemptId) => {
+    try {
+      // Change this line:
+      // const timerData = await attemptService.get(attemptService.examCache, `timer:${attemptId}`);
+
+      // To this:
+      const timerData = await get(examCache, `timer:${attemptId}`);
+
+      if (!timerData) {
+        // Try to get time from the database as fallback
+        try {
+          const ExamAttempt = (await import("../models/examAttempt.models.js"))
+            .default;
+          const attempt = await ExamAttempt.findById(attemptId)
+            .select("timeRemaining")
+            .lean();
+
+          if (attempt) {
+            return attempt.timeRemaining;
+          }
+        } catch (dbError) {
+          console.error(`Error retrieving attempt from database: ${dbError}`);
+        }
+        return null;
+      }
+
+      // Safely check for absoluteEndTime
+      const endTime = timerData.absoluteEndTime;
+      if (!endTime || typeof endTime !== "number") {
+        return timerData.timeRemaining || null; // Fall back to timeRemaining if available
+      }
+
+      // Calculate time remaining based on current server time and stored end time
+      const timeRemaining = Math.max(
+        0,
+        Math.floor((endTime - Date.now()) / 1000)
+      );
+
+      return timeRemaining;
+    } catch (error) {
+      console.error(
+        `Error calculating time remaining for ${attemptId}:`,
+        error
+      );
+      return null;
+    }
+  },
+
+  // Queue timer sync for background processing
+  queueTimerSync: async (attemptId, timeRemaining, userId) => {
+    try {
+      return await addToBatchQueue("timer_sync", {
+        attemptId,
+        timeRemaining,
+        userId,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      console.error(`Error queueing timer sync for ${attemptId}:`, error);
+      return false; // Continue execution even if queueing fails
+    }
+  },
+
+  // Queue timed-out exam for immediate processing
+  queueTimedOutExam: async (attemptId) => {
+    try {
+      return await addToBatchQueue("timed_out_exams", {
+        attemptId,
+        timestamp: Date.now(),
+      });
+    } catch (error) {
+      console.error(`Error queueing timed-out exam ${attemptId}:`, error);
+      return false;
     }
   },
 };

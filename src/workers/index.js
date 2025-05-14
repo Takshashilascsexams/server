@@ -274,6 +274,132 @@ const syncActiveExamTimers = async () => {
   }
 };
 
+// Add these functions to the worker file
+
+// Process timer sync queue
+const processTimerSyncQueue = async () => {
+  try {
+    return await attemptService.processBatchQueue(
+      "timer_sync",
+      async (items) => {
+        // Group by attemptId to prevent duplicate updates
+        const updatesByAttempt = {};
+
+        items.forEach((item) => {
+          const { attemptId, timeRemaining, userId, timestamp } = item.data;
+
+          // Only keep the most recent update for each attempt
+          if (
+            !updatesByAttempt[attemptId] ||
+            updatesByAttempt[attemptId].timestamp < timestamp
+          ) {
+            updatesByAttempt[attemptId] = { timeRemaining, userId, timestamp };
+          }
+        });
+
+        // Process each unique attempt with Promise handling
+        const updatePromises = Object.entries(updatesByAttempt).map(
+          async ([attemptId, data]) => {
+            try {
+              await ExamAttempt.updateOne(
+                { _id: attemptId, userId: data.userId, status: "in-progress" },
+                {
+                  $set: {
+                    timeRemaining: data.timeRemaining,
+                    lastDbSync: new Date(data.timestamp), // Use lastDbSync instead
+                  },
+                }
+              );
+              console.log(
+                `Updated time for attempt ${attemptId}: ${data.timeRemaining}s remaining`
+              );
+            } catch (error) {
+              console.error(
+                `Error updating time for attempt ${attemptId}:`,
+                error
+              );
+            }
+          }
+        );
+
+        // Wait for all updates to complete
+        await Promise.allSettled(updatePromises);
+      }
+    );
+  } catch (error) {
+    console.error("[Worker] Error processing timer sync queue:", error);
+    return 0;
+  }
+};
+
+// Process timed-out exams queue
+const processTimedOutExamsQueue = async () => {
+  try {
+    return await attemptService.processBatchQueue(
+      "timed_out_exams",
+      async (items) => {
+        // Process each timed-out exam
+        const updatePromises = items.map(async (item) => {
+          const { attemptId } = item.data;
+
+          try {
+            // Update the attempt status to timed-out
+            const result = await ExamAttempt.updateOne(
+              { _id: attemptId, status: "in-progress" },
+              {
+                $set: {
+                  status: "timed-out",
+                  timeRemaining: 0,
+                  endTime: new Date(),
+                },
+              }
+            );
+
+            if (result.modifiedCount > 0) {
+              console.log(`Exam attempt ${attemptId} marked as timed-out`);
+            }
+          } catch (error) {
+            console.error(
+              `Error processing timed-out exam ${attemptId}:`,
+              error
+            );
+          }
+        });
+
+        // Wait for all updates to complete
+        await Promise.allSettled(updatePromises);
+      }
+    );
+  } catch (error) {
+    console.error("[Worker] Error processing timed-out exams queue:", error);
+    return 0;
+  }
+};
+
+// Add these timer processing intervals to the startBackgroundTasks function
+setInterval(async () => {
+  try {
+    const processed = await processTimerSyncQueue();
+    if (processed > 0) {
+      console.log(`[Worker] Synced timers for ${processed} exam attempts`);
+    }
+  } catch (error) {
+    console.error("[Worker] Error syncing exam timers:", error);
+  }
+}, 10000); // Every 10 seconds
+
+// Process timed-out exams more frequently
+setInterval(async () => {
+  try {
+    const processed = await processTimedOutExamsQueue();
+    if (processed > 0) {
+      console.log(`[Worker] Processed ${processed} timed-out exams`);
+    }
+  } catch (error) {
+    console.error("[Worker] Error processing timed-out exams:", error);
+  }
+}, 5000); // Every 5 seconds
+
 // Handle graceful shutdown
 process.on("SIGTERM", gracefulShutdown);
 process.on("SIGINT", gracefulShutdown);

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import ExamAttempt from "../../../models/examAttempt.models.js";
 import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { getUserId } from "../../../utils/cachedDbQueries.js";
-import { examService } from "../../../services/redisService.js";
+import { examService, attemptService } from "../../../services/redisService.js";
 import { processExamSubmission } from "../../../utils/processExamSubmission.js";
 
 /**
@@ -110,6 +110,34 @@ const submitExam = catchAsync(async (req, res, next) => {
       );
     }
 
+    let currentTimeRemaining = 0;
+    if (attempt.status === "in-progress") {
+      try {
+        // Use the appropriate method from your attemptService
+        const timerData = await attemptService.getAttemptTimer(attemptId);
+
+        if (timerData && timerData.absoluteEndTime) {
+          // Calculate current time remaining based on absolute end time
+          currentTimeRemaining = Math.max(
+            0,
+            Math.floor((timerData.absoluteEndTime - Date.now()) / 1000)
+          );
+        } else {
+          // Fall back to value from database
+          currentTimeRemaining = attempt.timeRemaining || 0;
+        }
+      } catch (redisError) {
+        console.error("Error getting timer data from Redis:", redisError);
+        // Fall back to value from database
+        currentTimeRemaining = attempt.timeRemaining || 0;
+      }
+    } else if (attempt.status === "timed-out") {
+      // For timed-out exams, always use 0
+      currentTimeRemaining = 0;
+    }
+
+    attempt.currentTimeRemaining = currentTimeRemaining;
+
     // Use transaction for data consistency
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -163,6 +191,15 @@ const submitExam = catchAsync(async (req, res, next) => {
 
       // Release lock
       await examService.examCache.del(lockKey);
+
+      // Clean up timer cache as well to prevent further processing
+      try {
+        // Use examService.del instead of direct del
+        await examService.del(examService.examCache, `timer:${attemptId}`);
+      } catch (error) {
+        console.log("Non-critical error cleaning up timer cache:", error);
+        // Non-critical error, continue processing
+      }
 
       // Return result to client
       return res.status(200).json({

@@ -13,6 +13,7 @@ import getExamRankings from "../controllers/exam-attempt/client-controllers/get-
 import exportRankings from "../controllers/exam-attempt/client-controllers/export-rankings.js";
 import getExamRules from "../controllers/exam-attempt/client-controllers/get-exam-rules.js";
 import checkExamStatus from "../controllers/exam-attempt/client-controllers/check-exam-status.js";
+import getCurrentTime from "../controllers/exam-attempt/client-controllers/get-current-time.js";
 
 // admin routes
 import getAdminRankings from "../controllers/exam-attempt/admin-controllers/get-admin-rankings.js";
@@ -50,6 +51,9 @@ router.post("/answer/:attemptId/:questionId", saveAnswerLimiter, saveAnswer);
 
 // Update time remaining - Critical for exam state, very generous limits
 router.put("/time/:attemptId", examAttemptLimiter, updateTimeRemaining);
+
+// Get current time from server
+router.get("/time-check/:attemptId", examAttemptLimiter, getCurrentTime);
 
 // Submit exam - Critical operation, must not be rate-limited aggressively
 router.post("/submit/:attemptId", examAttemptLimiter, submitExam);
