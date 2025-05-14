@@ -342,7 +342,7 @@ app.get("/", (req, res) => {
 });
 
 // API routes
-app.use("/api/v1/users", userRoute);
+app.use("/api/v1/user", userRoute);
 app.use("/api/v1/exam", examRoute);
 app.use("/api/v1/questions", questionsRoute);
 app.use("/api/v1/payments", paymentRoute);
