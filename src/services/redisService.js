@@ -599,6 +599,192 @@ const questionService = {
       questionIds: questions.map((q) => q._id.toString()),
     });
   },
+
+  // Questions by exam operations
+  getQuestionsByExam: async (examId) => {
+    // Try to get the list of question IDs for this exam
+    const questionIds = await get(questionCache, `exam:${examId}:ids`);
+
+    if (!questionIds) {
+      return null; // No cached list of questions
+    }
+
+    // Batch load all questions
+    try {
+      const pipeline = questionCache.pipeline();
+      questionIds.forEach((id) => {
+        pipeline.get(`q:${id}`);
+      });
+
+      const results = await pipeline.exec();
+
+      // Process results - handle any missing questions
+      const questions = results
+        .map(([err, data], index) => {
+          if (err || !data) return null;
+          try {
+            return JSON.parse(data);
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter(Boolean);
+
+      // If we have all questions, return them
+      if (questions.length === questionIds.length) {
+        return questions;
+      }
+
+      // If some questions are missing, return null to trigger full reload
+      return null;
+    } catch (error) {
+      console.error(`Error batch loading questions for exam ${examId}:`, error);
+      return null;
+    }
+  },
+
+  setQuestionsByExam: async (examId, questionsData, ttl = DEFAULT_TTL) => {
+    try {
+      // Store the list of question IDs separately
+      const questionIds = questionsData.map((q) => q._id.toString());
+      await set(questionCache, `exam:${examId}:ids`, questionIds, ttl);
+
+      // Store each question individually with pipeline
+      const pipeline = questionCache.pipeline();
+      questionsData.forEach((question) => {
+        const questionId = question._id.toString();
+        pipeline.set(`q:${questionId}`, JSON.stringify(question), "EX", ttl);
+      });
+
+      await pipeline.exec();
+      return true;
+    } catch (error) {
+      console.error(`Error caching questions for exam ${examId}:`, error);
+      return false;
+    }
+  },
+
+  getQuestionsWithPagination: async (params) => {
+    try {
+      const { page, limit, sort, filters } = params;
+      const cacheKey = `dashboard:questions:${JSON.stringify({
+        page,
+        limit,
+        sort,
+        filters,
+      })}`;
+
+      return get(questionCache, cacheKey);
+    } catch (error) {
+      console.error("Error getting paginated questions from cache:", error);
+      return null;
+    }
+  },
+
+  setQuestionsWithPagination: async (params, data, ttl = 300) => {
+    try {
+      const { page, limit, sort, filters } = params;
+      const cacheKey = `dashboard:questions:${JSON.stringify({
+        page,
+        limit,
+        sort,
+        filters,
+      })}`;
+
+      return set(questionCache, cacheKey, data, ttl);
+    } catch (error) {
+      console.error("Error caching paginated questions:", error);
+      return false;
+    }
+  },
+
+  // Category and metadata operations
+  getCachedCategories: async () => {
+    try {
+      return get(questionCache, "question:categories");
+    } catch (error) {
+      console.error("Error getting cached categories:", error);
+      return null;
+    }
+  },
+
+  // 24 hours
+  setCachedCategories: async (categories, ttl = 86400) => {
+    try {
+      return set(questionCache, "question:categories", categories, ttl);
+    } catch (error) {
+      console.error("Error caching categories:", error);
+      return false;
+    }
+  },
+
+  updateExamQuestionCount: async (examId, count) => {
+    try {
+      // Update the count in the cache
+      await questionCache.hset(`exam:${examId}:stats`, "questionCount", count);
+
+      // Set a flag for the exam service to update the exam document
+      await questionCache.hset(`exam:${examId}:stats`, "needsUpdate", "true");
+
+      return true;
+    } catch (error) {
+      console.error(`Error updating question count for exam ${examId}:`, error);
+      return false;
+    }
+  },
+
+  getExamQuestionCount: async (examId) => {
+    try {
+      const count = await questionCache.hget(
+        `exam:${examId}:stats`,
+        "questionCount"
+      );
+      return count ? parseInt(count, 10) : null;
+    } catch (error) {
+      console.error(`Error getting question count for exam ${examId}:`, error);
+      return null;
+    }
+  },
+
+  deleteQuestionsByExam: async (examId) =>
+    del(questionCache, `exam:${examId}:ids`),
+
+  // Batch delete operations
+  batchDeleteQuestions: async (questionIds) => {
+    try {
+      const pipeline = questionCache.pipeline();
+
+      questionIds.forEach((id) => {
+        pipeline.del(`q:${id}`);
+      });
+
+      await pipeline.exec();
+      return true;
+    } catch (error) {
+      console.error(`Error batch deleting questions:`, error);
+      return false;
+    }
+  },
+
+  // Cache clearing
+  clearQuestionCache: async () => clearPattern(questionCache, "*"),
+
+  clearDashboardCache: async () =>
+    clearPattern(questionCache, "dashboard:questions:*"),
+
+  clearExamQuestionsCache: async (examId) => {
+    try {
+      await del(questionCache, `exam:${examId}:ids`);
+      await del(questionCache, `exam:${examId}:stats`);
+      return true;
+    } catch (error) {
+      console.error(
+        `Error clearing exam questions cache for ${examId}:`,
+        error
+      );
+      return false;
+    }
+  },
 };
 
 // Enhanced exam attempt service with optimizations for concurrent users

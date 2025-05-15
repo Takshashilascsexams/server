@@ -1,12 +1,15 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs/promises";
-import Question from "../../models/questions.models.js";
+import Question from "../../../models/questions.models.js";
 import mongoose from "mongoose";
-import { catchAsync, AppError } from "../../utils/errorHandler.js";
-import storage from "../../utils/multerConfig.js";
-import { checkExamExists, getUserId } from "../../utils/cachedDbQueries.js";
-import { questionService, examService } from "../../services/redisService.js";
+import { catchAsync, AppError } from "../../../utils/errorHandler.js";
+import storage from "../../../utils/multerConfig.js";
+import { checkExamExists, getUserId } from "../../../utils/cachedDbQueries.js";
+import {
+  questionService,
+  examService,
+} from "../../../services/redisService.js";
 
 // Configure file filter - only allow JSON files
 const fileFilter = (req, file, cb) => {
