@@ -1,11 +1,11 @@
-import Question from "../../models/questions.models.js";
-import { AppError, catchAsync } from "../../utils/errorHandler.js";
-import { checkExamExists, getUserId } from "../../utils/cachedDbQueries.js";
-import { questionService } from "../../services/redisService.js";
+import Question from "../../../models/questions.models.js";
+import { AppError, catchAsync } from "../../../utils/errorHandler.js";
+import { checkExamExists, getUserId } from "../../../utils/cachedDbQueries.js";
+import { questionService } from "../../../services/redisService.js";
 import {
   difficultyLevel as validDifficultyLevel,
   questionTypes,
-} from "../../utils/arrays.js";
+} from "../../../utils/arrays.js";
 
 const uploadSingleQuestion = catchAsync(async (req, res, next) => {
   const {
