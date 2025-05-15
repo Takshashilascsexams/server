@@ -53,7 +53,7 @@ const ExamSchema = new mongoose.Schema(
     passMarkPercentage: {
       type: Number,
       required: [true, "Each exam must have a pass mark percentage"],
-      default: 35,
+      default: 30,
     },
     difficultyLevel: {
       type: String,
@@ -134,16 +134,17 @@ ExamSchema.pre("save", function (next) {
   }
 
   // Calculate the minimum and maximum allowed percentage
-  const minPercentage = (35 / 100) * this.totalMarks;
-  const maxPercentage = (50 / 100) * this.totalMarks;
+  const minPassMark = (30 / 100) * this.totalMarks;
+  const maxPassMark = (50 / 100) * this.totalMarks;
 
   // Get the current percentage value (ensure it's a number)
-  const currentPercentage = Number(this.passMarkPercentage);
+  const currentPassMark =
+    Number(this.passMarkPercentage / 100) * this.totalMarks;
 
   // Check if percentage is within the allowed range
-  if (currentPercentage < minPercentage || currentPercentage > maxPercentage) {
+  if (currentPassMark < minPassMark || currentPassMark > maxPassMark) {
     const error = new Error(
-      `Pass mark percentage must be between ${minPercentage}% and ${maxPercentage}% of total marks.`
+      `Pass mark percentage must be between 30% and 50% of total marks.`
     );
     return next(error);
   }
@@ -175,19 +176,17 @@ ExamSchema.pre("findOneAndUpdate", function (next) {
       if (!totalMarks) return next();
 
       // Calculate the minimum and maximum allowed percentage
-      const minPercentage = (35 / 100) * this.totalMarks;
-      const maxPercentage = (50 / 100) * this.totalMarks;
+      const minPassMark = (30 / 100) * this.totalMarks;
+      const maxPassMark = (50 / 100) * this.totalMarks;
 
       // Get the current percentage value (ensure it's a number)
-      const currentPercentage = Number(update.passMarkPercentage);
+      const currentPassMark =
+        Number(this.passMarkPercentage / 100) * this.totalMarks;
 
       // Check if percentage is within the allowed range
-      if (
-        currentPercentage < minPercentage ||
-        currentPercentage > maxPercentage
-      ) {
+      if (currentPassMark < minPassMark || currentPassMark > maxPassMark) {
         const error = new Error(
-          `Pass mark percentage must be between ${minPercentage}% and ${maxPercentage}% of total marks.`
+          `Pass mark percentage must be between 30% and 50% of total marks.`
         );
         return next(error);
       }

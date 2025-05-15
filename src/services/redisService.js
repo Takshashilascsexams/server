@@ -396,6 +396,46 @@ const userService = {
     }
   },
   clearUserCache: async () => clearPattern(userCache, "*"),
+
+  // New methods for admin dashboard caching
+  getDashboardUsers: async (cacheKey) => {
+    try {
+      return await get(userCache, cacheKey);
+    } catch (error) {
+      console.error("Cache error in getDashboardUsers:", error);
+      return null;
+    }
+  },
+
+  setDashboardUsers: async (cacheKey, responseData, ttl = 300) => {
+    try {
+      return await set(userCache, cacheKey, responseData, ttl);
+    } catch (error) {
+      console.error("Failed to cache dashboard users:", error);
+      return false;
+    }
+  },
+
+  // New methods for getting and setting user by ID
+  getUserDetailsById: async (userId) => {
+    try {
+      const cacheKey = `admin:user:${userId}`;
+      return await get(userCache, cacheKey);
+    } catch (error) {
+      console.error("Cache error in getUserDetailsById:", error);
+      return null;
+    }
+  },
+
+  setUserDetailsById: async (userId, userData, ttl = 300) => {
+    try {
+      const cacheKey = `admin:user:${userId}`;
+      return await set(userCache, cacheKey, userData, ttl);
+    } catch (error) {
+      console.error("Failed to cache user details:", error);
+      return false;
+    }
+  },
 };
 
 // Enhanced question service with read-through and write-behind caching
