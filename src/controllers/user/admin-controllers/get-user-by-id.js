@@ -14,9 +14,8 @@ const getUserById = catchAsync(async (req, res, next) => {
   }
 
   // Try to get from cache first
-  const cacheKey = `admin:user:${userId}`;
   try {
-    const cachedData = await userService.get(userService.userCache, cacheKey);
+    const cachedData = await userService.getUserDetailsById(userId);
     if (cachedData) {
       return res.status(200).json({
         status: "success",
@@ -43,7 +42,7 @@ const getUserById = catchAsync(async (req, res, next) => {
 
   // Cache the result for 5 minutes
   try {
-    await userService.set(userService.userCache, cacheKey, responseData, 300);
+    await userService.setUserDetailsById(userId, responseData, 300);
   } catch (cacheError) {
     console.error("Failed to cache user details:", cacheError);
   }
