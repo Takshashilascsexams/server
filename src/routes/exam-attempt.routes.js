@@ -3,6 +3,7 @@ import express from "express";
 // client routes
 import startExam from "../controllers/exam-attempt/client-controllers/start-exam.js";
 import getExamQuestions from "../controllers/exam-attempt/client-controllers/get-exam-question.js";
+import saveBatchAnswers from "../controllers/exam-attempt/client-controllers/save-batch-answers.js";
 import saveAnswer from "../controllers/exam-attempt/client-controllers/save-answer.js";
 import updateTimeRemaining from "../controllers/exam-attempt/client-controllers/update-time-remaining.js";
 import submitExam from "../controllers/exam-attempt/client-controllers/submit-exam.js";
@@ -30,6 +31,7 @@ import {
   saveAnswerLimiter,
   apiLimiter,
   profileLimiter,
+  batchAnswerLimiter,
 } from "../middleware/rateLimiterMiddleware.js";
 
 const router = express.Router();
@@ -45,6 +47,9 @@ router.post("/start/:examId", examAttemptLimiter, startExam);
 
 // Get questions for an active attempt - Critical path during exam taking, very generous limits
 router.get("/questions/:attemptId", examAttemptLimiter, getExamQuestions);
+
+// Batch answer endpoint - optimized for high concurrency
+router.post("/batch-answers/:attemptId", batchAnswerLimiter, saveBatchAnswers);
 
 // Save answer for a question - Very high limits for 500 concurrent test-takers
 router.post("/answer/:attemptId/:questionId", saveAnswerLimiter, saveAnswer);
