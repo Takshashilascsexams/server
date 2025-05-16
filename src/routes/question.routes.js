@@ -36,10 +36,10 @@ router.put("/:questionId", updateQuestion);
 router.delete("/:questionId", deleteQuestion);
 
 // Existing bulk upload routes
-router.post("/upload-bulk", bulkQuestionController.uploadBulkQuestions);
-router.post("/validate-bulk", bulkQuestionController.validateBulkQuestions);
+router.post("/bulk", bulkQuestionController.uploadBulkQuestions);
+router.post("/bulk-validate", bulkQuestionController.validateBulkQuestions);
 
 // Existing single upload route
-router.post("/upload-single", uploadSingleQuestion);
+router.post("/single-upload", uploadSingleQuestion);
 
 export default router;
