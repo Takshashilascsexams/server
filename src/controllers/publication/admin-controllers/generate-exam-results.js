@@ -4,10 +4,7 @@ import Publication from "../../../models/publication.models.js";
 import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { getUserId } from "../../../utils/cachedDbQueries.js";
 import { publicationService } from "../../../services/redisService.js";
-import {
-  generateRankingsPDF,
-  uploadFile,
-} from "../../../services/pdfService.js";
+import { generateAndUploadPDF } from "../../../services/pdfService.js";
 
 const generateExamResults = catchAsync(async (req, res, next) => {
   const { examId } = req.params;
@@ -85,7 +82,7 @@ const generateExamResults = catchAsync(async (req, res, next) => {
     };
   });
 
-  // Generate PDF
+  // Generate and upload PDF in one step
   try {
     const stats = {
       totalAttempts,
@@ -94,14 +91,12 @@ const generateExamResults = catchAsync(async (req, res, next) => {
       highestScore,
     };
 
-    const { filePath, fileName } = await generateRankingsPDF(
+    // Use the new combined function
+    const { fileUrl, fileName } = await generateAndUploadPDF(
       exam,
       formattedRankings,
       stats
     );
-
-    // Upload PDF to storage
-    const fileUrl = await uploadFile(filePath, fileName);
 
     // Create publication record
     const publication = await Publication.create({
@@ -111,6 +106,7 @@ const generateExamResults = catchAsync(async (req, res, next) => {
       studentCount: attempts.length,
       isPublished: false,
       createdBy: userId,
+      storageProvider: "cloudinary", // Add storage provider info
     });
 
     // Clear publication cache
