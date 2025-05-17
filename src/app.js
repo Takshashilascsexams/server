@@ -23,6 +23,7 @@ import { AppError, errorController } from "./utils/errorHandler.js";
 
 // Services
 import { checkHealth, examService } from "./services/redisService.js";
+import { configurePdfServer } from "./utils/configurePdfServer.js";
 
 // Routes
 import userRoute from "./routes/user.routes.js";
@@ -153,6 +154,9 @@ app.use(
   })
 );
 app.use(express.static("./public"));
+
+// Configure PDF server
+configurePdfServer(app);
 
 // Security middleware
 app.use(mongoSanitize()); // NoSQL injection protection

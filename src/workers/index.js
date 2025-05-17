@@ -1,5 +1,9 @@
 import { connectDB } from "../lib/connectDB.js";
-import { analyticsService, attemptService } from "../services/redisService.js";
+import {
+  analyticsService,
+  attemptService,
+  processBatchQueue,
+} from "../services/redisService.js";
 import ExamAnalytics from "../models/examAnalytics.models.js";
 import ExamAttempt from "../models/examAttempt.models.js";
 import mongoose from "mongoose";
@@ -149,74 +153,72 @@ const syncAnalyticsToDb = async () => {
 // Process batched answer submissions from the frontend
 const processBatchedAnswers = async () => {
   try {
-    // Get batch queue keys
-    const batchQueueKey = "batch:answers";
+    // Get batch queue key
+    const batchQueueKey = "queue:answer_updates"; // Use correct queue name from redisService.js
 
-    // Create processor function for batch items
-    const processor = async (batchItem) => {
-      const { attemptId, answers } = batchItem;
+    // Define the processor function for answer updates
+    const processor = async (batchItems) => {
+      // Group items by attemptId
+      const updatesByAttempt = {};
 
-      if (!attemptId || !answers || !Array.isArray(answers)) {
-        throw new Error("Invalid batch item format");
-      }
+      batchItems.forEach((item) => {
+        const { attemptId, answers } = item.data;
+        if (!updatesByAttempt[attemptId]) {
+          updatesByAttempt[attemptId] = [];
+        }
+        updatesByAttempt[attemptId].push(...answers);
+      });
 
-      // Get the exam attempt
-      const attempt = await ExamAttempt.findById(attemptId)
-        .select("userId answers")
-        .lean();
+      // Process each attempt's answers
+      for (const [attemptId, answers] of Object.entries(updatesByAttempt)) {
+        // Get the exam attempt
+        const attempt = await ExamAttempt.findById(attemptId)
+          .select("userId answers")
+          .lean();
 
-      if (!attempt) {
-        throw new Error(`Exam attempt ${attemptId} not found`);
-      }
-
-      // Process each answer in the batch
-      for (const answer of answers) {
-        const { questionId, selectedOption, responseTime } = answer;
-
-        // Find the index of this question in the attempt's answers array
-        const answerIndex = attempt.answers.findIndex(
-          (a) => a.questionId.toString() === questionId
-        );
-
-        if (answerIndex === -1) {
-          continue; // Skip if question not found
+        if (!attempt) {
+          console.error(`Exam attempt ${attemptId} not found`);
+          continue;
         }
 
-        // Update the answer in the database
-        await ExamAttempt.updateOne(
-          { _id: attemptId, "answers.questionId": questionId },
-          {
-            $set: {
-              "answers.$.selectedOption": selectedOption,
-              "answers.$.responseTime": responseTime || 0,
+        // Process each answer
+        for (const answer of answers) {
+          const { questionId, selectedOption, responseTime } = answer;
+
+          // Update the answer in the database
+          await ExamAttempt.updateOne(
+            { _id: attemptId, "answers.questionId": questionId },
+            {
+              $set: {
+                "answers.$.selectedOption": selectedOption,
+                "answers.$.responseTime": responseTime || 0,
+              },
+            }
+          );
+
+          // Update cache
+          const cacheKey = `attempt:${attemptId}:answers`;
+          const cachedData = await attemptService.get(
+            attemptService.examCache,
+            `attempt:${attemptId}:answers`
+          );
+          const currentAnswers = cachedData || {};
+
+          await attemptService.set(
+            attemptService.examCache,
+            cacheKey,
+            {
+              ...currentAnswers,
+              [questionId]: { selectedOption, responseTime: responseTime || 0 },
             },
-          }
-        );
-
-        // Update cache - CORRECTION: Use proper method
-        const cacheKey = `attempt:${attemptId}:answers`;
-        const currentAnswers =
-          (await attemptService.examCache.get(cacheKey)) || {};
-        const updatedAnswers = {
-          ...currentAnswers,
-          [questionId]: { selectedOption, responseTime: responseTime || 0 },
-        };
-
-        await attemptService.examCache.set(
-          cacheKey,
-          JSON.stringify(updatedAnswers),
-          "EX",
-          300
-        ); // 5 minutes
+            300 // 5 minutes
+          );
+        }
       }
     };
 
-    // Process batches
-    return await attemptService.examCache.batchProcess(
-      batchQueueKey,
-      processor,
-      { batchSize: 100 }
-    );
+    // Use the imported processBatchQueue function
+    return await processBatchQueue("answer_updates", processor);
   } catch (error) {
     console.error("[Worker] Error processing batched answers:", error);
     return 0;
@@ -335,41 +337,35 @@ const processTimerSyncQueue = async () => {
 // Process timed-out exams queue
 const processTimedOutExamsQueue = async () => {
   try {
-    return await attemptService.processBatchQueue(
-      "timed_out_exams",
-      async (items) => {
-        // Process each timed-out exam
-        const updatePromises = items.map(async (item) => {
-          const { attemptId } = item.data;
+    return await processBatchQueue("timed_out_exams", async (items) => {
+      // Process each timed-out exam
+      const updatePromises = items.map(async (item) => {
+        const { attemptId } = item.data;
 
-          try {
-            // Update the attempt status to timed-out
-            const result = await ExamAttempt.updateOne(
-              { _id: attemptId, status: "in-progress" },
-              {
-                $set: {
-                  status: "timed-out",
-                  timeRemaining: 0,
-                  endTime: new Date(),
-                },
-              }
-            );
-
-            if (result.modifiedCount > 0) {
-              console.log(`Exam attempt ${attemptId} marked as timed-out`);
+        try {
+          // Update the attempt status to timed-out
+          const result = await ExamAttempt.updateOne(
+            { _id: attemptId, status: "in-progress" },
+            {
+              $set: {
+                status: "timed-out",
+                timeRemaining: 0,
+                endTime: new Date(),
+              },
             }
-          } catch (error) {
-            console.error(
-              `Error processing timed-out exam ${attemptId}:`,
-              error
-            );
-          }
-        });
+          );
 
-        // Wait for all updates to complete
-        await Promise.allSettled(updatePromises);
-      }
-    );
+          if (result.modifiedCount > 0) {
+            console.log(`Exam attempt ${attemptId} marked as timed-out`);
+          }
+        } catch (error) {
+          console.error(`Error processing timed-out exam ${attemptId}:`, error);
+        }
+      });
+
+      // Wait for all updates to complete
+      await Promise.allSettled(updatePromises);
+    });
   } catch (error) {
     console.error("[Worker] Error processing timed-out exams queue:", error);
     return 0;

@@ -1,4 +1,3 @@
-// src/models/publication.models.js
 import mongoose from "mongoose";
 
 const PublicationSchema = new mongoose.Schema(
@@ -34,6 +33,11 @@ const PublicationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+    },
+    storageProvider: {
+      type: String,
+      enum: ["local", "s3", "cloudinary"],
+      default: "cloudinary",
     },
   },
   {

@@ -1,34 +1,47 @@
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { AppError } from "../utils/errorHandler.js";
-import {
-  S3Client,
-  PutObjectCommand,
-  GetObjectCommand,
-  DeleteObjectCommand,
-} from "@aws-sdk/client-s3";
+import cloudinary from "cloudinary";
+import streamifier from "streamifier";
 
 // Configure storage options
 const isProduction = process.env.NODE_ENV === "production";
 const publicPath = path.join(process.cwd(), "public", "publications");
 
-// Ensure publications directory exists
+// Ensure publications directory exists for development mode
 if (!fs.existsSync(publicPath)) {
   fs.mkdirSync(publicPath, { recursive: true });
 }
 
-// Initialize S3 client for production
-let s3Client;
-if (isProduction) {
-  s3Client = new S3Client({
-    region: process.env.AWS_REGION || "us-east-1",
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
+// Track if Cloudinary is properly configured
+let isCloudinaryConfigured = false;
+
+// Configure Cloudinary
+try {
+  if (
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET
+  ) {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+      secure: true,
+    });
+    isCloudinaryConfigured = true;
+    console.log("Cloudinary configured successfully");
+  } else {
+    console.warn(
+      "⚠️ Cloudinary environment variables missing. PDF uploads will use local storage only."
+    );
+    console.warn(
+      "Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in your .env file."
+    );
+  }
+} catch (error) {
+  console.error("Error configuring Cloudinary:", error);
 }
 
 /**
@@ -36,7 +49,7 @@ if (isProduction) {
  * @param {Object} exam - Exam details
  * @param {Array} rankings - Ranked student data
  * @param {Object} stats - Statistics about the exam results
- * @returns {Promise<{filePath: string, fileName: string}>}
+ * @returns {Promise<{filePath: string, fileName: string, pdfBuffer: Buffer}>}
  */
 export const generateRankingsPDF = async (exam, rankings, stats) => {
   if (!exam || !rankings || rankings.length === 0) {
@@ -57,7 +70,13 @@ export const generateRankingsPDF = async (exam, rankings, stats) => {
     size: "A4",
   });
 
-  // Pipe the PDF to a file
+  // Collect PDF data as a buffer for direct Cloudinary upload in production
+  const chunks = [];
+  doc.on("data", (chunk) => {
+    chunks.push(chunk);
+  });
+
+  // Create write stream for local storage
   const stream = fs.createWriteStream(filePath);
   doc.pipe(stream);
 
@@ -78,7 +97,7 @@ export const generateRankingsPDF = async (exam, rankings, stats) => {
     .text(`Duration: ${exam.duration} minutes`)
     .text(`Total Questions: ${exam.totalQuestions}`)
     .text(`Total Marks: ${exam.totalMarks}`)
-    .text(`Pass Mark: ${exam.passMarkPercentage}`) // Removed % symbol
+    .text(`Pass Mark: ${exam.passMarkPercentage}%`)
     .text(`Date Generated: ${new Date().toLocaleString()}`);
   doc.moveDown(1);
 
@@ -217,7 +236,7 @@ export const generateRankingsPDF = async (exam, rankings, stats) => {
   });
 
   // Add footer with increased space before the disclaimer
-  doc.moveDown(4); // Added more space before the disclaimer
+  doc.moveDown(4);
   doc
     .fontSize(8)
     .font("Helvetica-Oblique")
@@ -231,111 +250,268 @@ export const generateRankingsPDF = async (exam, rankings, stats) => {
   // Finalize the PDF
   doc.end();
 
-  // Return a promise that resolves when the PDF is written
+  // Return a promise that resolves when the PDF is finalized
   return new Promise((resolve, reject) => {
+    // Set up for stream completion
     stream.on("finish", () => {
-      resolve({ filePath, fileName });
+      const pdfBuffer = Buffer.concat(chunks);
+      resolve({ filePath, fileName, pdfBuffer });
     });
-    stream.on("error", reject);
+
+    stream.on("error", (err) => {
+      console.error("Error writing PDF to file:", err);
+      // Even if local file fails, we might still have the buffer
+      if (chunks.length > 0) {
+        const pdfBuffer = Buffer.concat(chunks);
+        resolve({ filePath: null, fileName, pdfBuffer });
+      } else {
+        reject(err);
+      }
+    });
+
+    doc.on("error", reject);
   });
 };
 
 /**
- * Upload a file to storage (S3 in production, local in development)
- * @param {string} filePath - Local file path
+ * Upload a file to Cloudinary or store locally
+ * @param {string|Buffer} filePathOrBuffer - Local file path or buffer
  * @param {string} fileName - File name to use in storage
  * @returns {Promise<string>} - URL of the uploaded file
  */
-export const uploadFile = async (filePath, fileName) => {
-  if (isProduction) {
-    // Use S3 in production
-    const fileContent = fs.readFileSync(filePath);
-    const bucketName = process.env.AWS_S3_BUCKET;
-    const key = `publications/${fileName}`;
+export const uploadFile = async (filePathOrBuffer, fileName) => {
+  try {
+    // If Cloudinary is properly configured and we're in production, use it
+    if (isCloudinaryConfigured && isProduction) {
+      const publicId = `exam-results/${fileName.replace(/\.pdf$/, "")}`;
 
-    const command = new PutObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-      Body: fileContent,
-      ContentType: "application/pdf",
-      ACL: "private",
-    });
+      // Upload the file to Cloudinary
+      if (Buffer.isBuffer(filePathOrBuffer)) {
+        // Upload buffer to Cloudinary
+        const uploadResult = await uploadBufferToCloudinary(
+          filePathOrBuffer,
+          publicId
+        );
+        return uploadResult.secure_url;
+      } else {
+        // Upload from file path
+        const uploadResult = await cloudinary.uploader.upload(
+          filePathOrBuffer,
+          {
+            resource_type: "raw",
+            public_id: publicId,
+            format: "pdf",
+            type: "upload",
+            access_mode: "public",
+          }
+        );
 
-    try {
-      await s3Client.send(command);
+        // Success! Now we can optionally clean up the local file
+        if (filePathOrBuffer && fs.existsSync(filePathOrBuffer)) {
+          fs.unlinkSync(filePathOrBuffer);
+        }
 
-      // Generate signed URL
-      const url = await generateSignedUrl(key);
+        return uploadResult.secure_url;
+      }
+    } else {
+      // Not in production or Cloudinary not configured - use local storage
+      // If we're passed a buffer, write it to disk
+      if (Buffer.isBuffer(filePathOrBuffer)) {
+        const filePath = path.join(publicPath, fileName);
+        fs.writeFileSync(filePath, filePathOrBuffer);
+      } else if (
+        filePathOrBuffer &&
+        path.dirname(filePathOrBuffer) !== publicPath
+      ) {
+        // If the file is not already in the publications directory, copy it there
+        const destPath = path.join(publicPath, fileName);
+        fs.copyFileSync(filePathOrBuffer, destPath);
+        // Remove the original file
+        fs.unlinkSync(filePathOrBuffer);
+      }
 
-      // Clean up local file
-      fs.unlinkSync(filePath);
-
-      return url;
-    } catch (error) {
-      console.error("Error uploading to S3:", error);
-      throw new AppError("Failed to upload file to storage", 500);
+      // Return local URL
+      console.log(`PDF stored locally at: /publications/${fileName}`);
+      return `/publications/${fileName}`;
     }
-  } else {
-    // In development, use local path
-    return `/publications/${fileName}`;
+  } catch (error) {
+    console.error("Error uploading file:", error);
+
+    // Fallback to local storage if Cloudinary fails
+    try {
+      console.warn("Falling back to local storage");
+
+      // Ensure the file exists locally
+      let localPath = filePathOrBuffer;
+      if (Buffer.isBuffer(filePathOrBuffer)) {
+        localPath = path.join(publicPath, fileName);
+        fs.writeFileSync(localPath, filePathOrBuffer);
+      } else if (!fs.existsSync(path.join(publicPath, fileName))) {
+        // If the file doesn't exist in publications dir, copy it there
+        const destPath = path.join(publicPath, fileName);
+        fs.copyFileSync(filePathOrBuffer, destPath);
+      }
+
+      return `/publications/${fileName}`;
+    } catch (fallbackError) {
+      console.error("Fallback to local storage also failed:", fallbackError);
+      throw new AppError("Failed to store PDF", 500);
+    }
   }
 };
 
 /**
- * Generate a signed URL for S3 objects
- * @param {string} key - S3 object key
+ * Helper function to upload a buffer to Cloudinary
+ * @param {Buffer} buffer - PDF buffer
+ * @param {string} publicId - Public ID for the file in Cloudinary
+ * @returns {Promise<Object>} - Cloudinary upload result
+ */
+const uploadBufferToCloudinary = (buffer, publicId) => {
+  return new Promise((resolve, reject) => {
+    if (!isCloudinaryConfigured) {
+      return reject(new Error("Cloudinary is not properly configured"));
+    }
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "raw",
+        public_id: publicId,
+        format: "pdf",
+        type: "upload",
+        access_mode: "public",
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+
+    streamifier.createReadStream(buffer).pipe(uploadStream);
+  });
+};
+
+/**
+ * Generate a signed URL for Cloudinary assets
+ * @param {string} fileUrl - Cloudinary URL or file path
  * @param {number} expiresIn - Expiration time in seconds
  * @returns {Promise<string>} - Signed URL
  */
-export const generateSignedUrl = async (key, expiresIn = 86400) => {
-  if (!isProduction) {
-    // In development, return a local path
-    return `/publications/${path.basename(key)}`;
+export const generateSignedUrl = async (fileUrl, expiresIn = 86400) => {
+  try {
+    // Skip if not a Cloudinary URL or Cloudinary not configured
+    if (!isCloudinaryConfigured || !isCloudinaryUrl(fileUrl)) {
+      return fileUrl;
+    }
+
+    // Extract public ID from Cloudinary URL
+    const urlParts = fileUrl.split("/");
+    const filename = urlParts[urlParts.length - 1];
+    if (!filename) {
+      console.error("Could not extract filename from URL:", fileUrl);
+      return fileUrl;
+    }
+
+    const publicId = `exam-results/${filename.replace(/\.pdf$/, "")}`;
+
+    // Generate a signed URL with expiration
+    const signedUrl = cloudinary.utils.private_download_url(publicId, "pdf", {
+      resource_type: "raw",
+      expires_at: Math.floor(Date.now() / 1000) + expiresIn,
+    });
+
+    return signedUrl;
+  } catch (error) {
+    console.error("Error generating signed URL:", error);
+    // Return original URL as fallback
+    return fileUrl;
   }
-
-  const bucketName = process.env.AWS_S3_BUCKET;
-  const command = new GetObjectCommand({
-    Bucket: bucketName,
-    Key: key,
-  });
-
-  return await getSignedUrl(s3Client, command, { expiresIn });
 };
 
 /**
  * Delete a file from storage
- * @param {string} fileUrl - URL or path of the file to delete
+ * @param {string} fileUrl - URL of the file to delete
  * @returns {Promise<boolean>} - Success status
  */
 export const deleteFile = async (fileUrl) => {
-  if (isProduction) {
-    // Extract key from URL
-    const key = fileUrl.split("/").slice(-2).join("/");
-    const bucketName = process.env.AWS_S3_BUCKET;
+  try {
+    if (isCloudinaryConfigured && isCloudinaryUrl(fileUrl)) {
+      // Extract the public_id from the URL
+      const urlParts = fileUrl.split("/");
+      const filename = urlParts[urlParts.length - 1];
+      const publicId = `exam-results/${filename.replace(/\.pdf$/, "")}`;
 
-    const command = new DeleteObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-    });
+      const result = await cloudinary.uploader.destroy(publicId, {
+        resource_type: "raw",
+      });
 
-    try {
-      await s3Client.send(command);
-      return true;
-    } catch (error) {
-      console.error("Error deleting from S3:", error);
-      return false;
+      if (result.result !== "ok") {
+        console.warn(`Cloudinary deletion result: ${result.result}`);
+      }
     }
-  } else {
-    // In development, remove local file
+
+    // Also try to remove local file if it exists
     try {
-      const filePath = path.join(process.cwd(), "public", fileUrl);
+      const filename = fileUrl.split("/").pop();
+      const filePath = path.join(publicPath, filename);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
       }
-      return true;
-    } catch (error) {
-      console.error("Error deleting local file:", error);
-      return false;
+    } catch (localError) {
+      console.error("Error deleting local file:", localError);
+      // Continue even if local file deletion fails
     }
+
+    return true;
+  } catch (error) {
+    console.error("Error deleting file:", error);
+    return false;
   }
+};
+
+/**
+ * Combined function to generate and directly upload a PDF
+ * @param {Object} exam - Exam details
+ * @param {Array} rankings - Ranked student data
+ * @param {Object} stats - Statistics about the exam results
+ * @returns {Promise<{fileUrl: string, fileName: string}>} - URL and name of the uploaded PDF
+ */
+export const generateAndUploadPDF = async (exam, rankings, stats) => {
+  try {
+    // Generate the PDF
+    const { filePath, fileName, pdfBuffer } = await generateRankingsPDF(
+      exam,
+      rankings,
+      stats
+    );
+
+    // Upload the PDF (either from filePath or directly from buffer)
+    const fileUrl = await uploadFile(filePath || pdfBuffer, fileName);
+
+    return { fileUrl, fileName };
+  } catch (error) {
+    console.error("Error in generateAndUploadPDF:", error);
+    throw new AppError("Failed to generate and upload PDF", 500);
+  }
+};
+
+/**
+ * Check if a URL is a Cloudinary URL
+ * @param {string} url - URL to check
+ * @returns {boolean} - True if it's a Cloudinary URL
+ */
+export const isCloudinaryUrl = (url) => {
+  return url && typeof url === "string" && url.includes("cloudinary.com");
+};
+
+/**
+ * Get public ID from Cloudinary URL
+ * @param {string} url - Cloudinary URL
+ * @returns {string} - Public ID
+ */
+export const getPublicIdFromUrl = (url) => {
+  if (!url || typeof url !== "string") return null;
+
+  const urlParts = url.split("/");
+  const filename = urlParts[urlParts.length - 1];
+  return `exam-results/${filename.replace(/\.pdf$/, "")}`;
 };
