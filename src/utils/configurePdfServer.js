@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 
 /**
- * Configure Express to serve PDF files
+ * Configure Express to serve PDF files as a fallback
  * @param {Object} app - Express app instance
  */
 export const configurePdfServer = (app) => {
@@ -30,44 +30,40 @@ export const configurePdfServer = (app) => {
   );
 
   console.log(
-    `PDF server configured at /publications serving from ${publicationPath}`
+    `PDF server configured as fallback at /publications serving from ${publicationPath}`
   );
 
-  // Add a diagnostic endpoint in development
-  if (process.env.NODE_ENV !== "production") {
-    app.get("/api/check-pdf-access", (req, res) => {
-      let files = [];
-      let directoryExists = false;
+  // Add a diagnostic endpoint
+  app.get("/api/check-pdf-storage", (req, res) => {
+    let files = [];
+    let directoryExists = false;
 
-      try {
-        directoryExists = fs.existsSync(publicationPath);
-        if (directoryExists) {
-          files = fs.readdirSync(publicationPath);
-        }
-      } catch (error) {
-        console.error("Error accessing PDF directory:", error);
+    try {
+      directoryExists = fs.existsSync(publicationPath);
+      if (directoryExists) {
+        files = fs.readdirSync(publicationPath);
       }
+    } catch (error) {
+      console.error("Error accessing PDF directory:", error);
+    }
 
-      res.json({
-        status: "success",
-        pdfDirectory: {
-          path: publicationPath,
-          exists: directoryExists,
-          fileCount: files.length,
-          files: files.slice(0, 10), // Show first 10 files
-        },
-        cloudinaryConfig: {
-          configured:
-            !!process.env.CLOUDINARY_CLOUD_NAME &&
-            !!process.env.CLOUDINARY_API_KEY &&
-            !!process.env.CLOUDINARY_API_SECRET,
-          cloudName: process.env.CLOUDINARY_CLOUD_NAME || "not_configured",
-        },
-        sampleUrls: files.slice(0, 3).map((file) => ({
-          filename: file,
-          localUrl: `/publications/${file}`,
-        })),
-      });
+    res.json({
+      status: "success",
+      primaryStorage: process.env.CLOUDINARY_CLOUD_NAME
+        ? "cloudinary"
+        : "local",
+      cloudinaryConfig: {
+        configured:
+          !!process.env.CLOUDINARY_CLOUD_NAME &&
+          !!process.env.CLOUDINARY_API_KEY &&
+          !!process.env.CLOUDINARY_API_SECRET,
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME || "not_configured",
+      },
+      fallbackStorage: {
+        path: publicationPath,
+        exists: directoryExists,
+        fileCount: files.length,
+      },
     });
-  }
+  });
 };
