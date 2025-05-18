@@ -36,7 +36,7 @@ const PublicationSchema = new mongoose.Schema(
     },
     storageProvider: {
       type: String,
-      enum: ["local", "s3", "cloudinary"],
+      enum: ["local", "s3", "cloudinary", "firebase"],
       default: "cloudinary",
     },
   },

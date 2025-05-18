@@ -1,8 +1,7 @@
 import Publication from "../../../models/publication.models.js";
 import Exam from "../../../models/exam.models.js";
 import { catchAsync, AppError } from "../../../utils/errorHandler.js";
-import { isCloudinaryUrl } from "../../../services/pdfService.js";
-import cloudinary from "cloudinary";
+import { isFirebaseUrl } from "../../../services/pdfService.js";
 
 const getPublicationById = catchAsync(async (req, res, next) => {
   const { publicationId } = req.params;
@@ -27,60 +26,36 @@ const getPublicationById = catchAsync(async (req, res, next) => {
     return next(new AppError("Associated exam not found", 404));
   }
 
-  // Handle the file URL based on environment and storage provider
+  // Handle the file URL based on storage provider
   let fileUrl = publication.fileUrl;
-  const storageProvider =
-    publication.storageProvider ||
-    (isCloudinaryUrl(fileUrl) ? "cloudinary" : "local");
+  const storageProvider = publication.storageProvider || "local";
 
-  if (storageProvider === "cloudinary") {
-    // For Cloudinary URLs
-    if (process.env.NODE_ENV === "production") {
-      // In production, we might want a signed URL with expiration for security
-      if (!fileUrl.includes("?")) {
-        try {
-          // If URL doesn't have query parameters (not already signed)
-          const urlParts = fileUrl.split("/");
-          const filename = urlParts[urlParts.length - 1];
-          const publicId = `exam-results/${filename.replace(/\.pdf$/, "")}`;
+  console.log(`Publication storage provider: ${storageProvider}`);
+  console.log(`Original fileUrl: ${fileUrl}`);
 
-          // Use short expiration for production
-          const expiresAt = Math.floor(Date.now() / 1000) + 3600; // 1 hour
-          fileUrl = cloudinary.utils.private_download_url(publicId, "pdf", {
-            resource_type: "raw",
-            expires_at: expiresAt,
-          });
-        } catch (error) {
-          console.error("Error generating Cloudinary signed URL:", error);
-          // Keep original URL if signing fails
-        }
-      }
-    } else {
-      // In development, use the direct URL for easier access
-      console.log(`Using Cloudinary URL in development: ${fileUrl}`);
+  if (storageProvider === "firebase") {
+    // For Firebase URLs, we can use them directly
+    // Firebase Storage URLs already include authentication tokens when needed
+    console.log("Using Firebase Storage URL directly");
+
+    // Check if URL is actually from Firebase (in case of data inconsistency)
+    if (!isFirebaseUrl(fileUrl)) {
+      console.warn(
+        "Storage provider is Firebase but URL doesn't match Firebase format"
+      );
     }
+  } else if (storageProvider === "cloudinary") {
+    // For legacy Cloudinary URLs, keep for backward compatibility
+    console.log("Found legacy Cloudinary URL - consider migrating to Firebase");
   } else if (storageProvider === "s3") {
     // Legacy S3 URL handling for backward compatibility
-    if (process.env.NODE_ENV !== "production") {
-      // Make sure we're using the URL from public directory
-      if (fileUrl.includes("/uploads/publications/")) {
-        const fileName = fileUrl.split("/").pop();
-        fileUrl = `/publications/${fileName}`;
-      }
-    } else {
-      // For S3 URLs in production, warn about migration
-      if (!fileUrl.includes("cloudinary") && fileUrl.includes("amazonaws")) {
-        console.warn(
-          `Legacy S3 URL detected: ${fileUrl}. Consider running the Cloudinary migration script.`
-        );
-        // No actual way to handle this since we've removed S3 dependencies
-      }
-    }
-  } else {
-    // Local files in development
+    console.warn("Found legacy S3 URL - consider migrating to Firebase");
+  } else if (storageProvider === "local") {
+    // For local files, ensure the path is correct
     if (fileUrl.includes("/uploads/publications/")) {
       const fileName = fileUrl.split("/").pop();
       fileUrl = `/publications/${fileName}`;
+      console.log(`Using local storage URL: ${fileUrl}`);
     }
   }
 
@@ -90,7 +65,7 @@ const getPublicationById = catchAsync(async (req, res, next) => {
     examId: publication.examId,
     examTitle: exam.title,
     examDescription: exam.description,
-    fileUrl: fileUrl,
+    fileUrl: fileUrl, // Use the processed URL
     fileName: publication.fileName,
     studentCount: publication.studentCount,
     isPublished: publication.isPublished,

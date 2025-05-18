@@ -82,7 +82,7 @@ const generateExamResults = catchAsync(async (req, res, next) => {
     };
   });
 
-  // Generate and upload PDF in one step
+  // Generate and upload PDF to Firebase
   try {
     const stats = {
       totalAttempts,
@@ -91,22 +91,29 @@ const generateExamResults = catchAsync(async (req, res, next) => {
       highestScore,
     };
 
-    // Use the new combined function
+    // Use the unified function to generate and upload PDF
     const { fileUrl, fileName } = await generateAndUploadPDF(
       exam,
       formattedRankings,
       stats
     );
 
+    // Log URL for debugging purposes
+    console.log("===== PDF Generation Complete =====");
+    console.log("PDF URL:", fileUrl);
+    console.log("Filename:", fileName);
+    console.log("Storage Provider: Firebase");
+    console.log("=================================");
+
     // Create publication record
     const publication = await Publication.create({
       examId,
-      fileUrl,
+      fileUrl, // This is a direct Firebase Storage URL
       fileName,
       studentCount: attempts.length,
       isPublished: false,
       createdBy: userId,
-      storageProvider: "cloudinary", // Add storage provider info
+      storageProvider: "firebase", // Update provider info
     });
 
     // Clear publication cache
