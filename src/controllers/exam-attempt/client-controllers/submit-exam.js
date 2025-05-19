@@ -2,8 +2,11 @@ import mongoose from "mongoose";
 import ExamAttempt from "../../../models/examAttempt.models.js";
 import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { getUserId } from "../../../utils/cachedDbQueries.js";
-import { examService, attemptService } from "../../../services/redisService.js";
-import { processExamSubmission } from "../../../utils/processExamSubmission.js";
+import {
+  examService,
+  attemptService,
+  queueExamSubmission,
+} from "../../../services/redisService.js";
 
 /**
  * Controller to submit an exam and calculate results
@@ -41,7 +44,6 @@ const submitExam = catchAsync(async (req, res, next) => {
         );
 
         if (!lockAcquired && attempt < 3) {
-          // Wait with exponential backoff before retrying
           await new Promise((resolve) =>
             setTimeout(resolve, 100 * Math.pow(2, attempt - 1))
           );
@@ -52,7 +54,6 @@ const submitExam = catchAsync(async (req, res, next) => {
     }
 
     if (!lockAcquired) {
-      // If we can't acquire lock after retries, inform user
       return next(
         new AppError(
           "System is currently processing your exam submission. Please try again in a few seconds.",
@@ -61,8 +62,7 @@ const submitExam = catchAsync(async (req, res, next) => {
       );
     }
 
-    // First check if the submission is already in progress or completed
-    // This is an optimization to avoid unnecessary processing
+    // Check if the submission is already in progress or completed
     const cacheKey = `submit:${attemptId}:status`;
     const submissionStatus = await examService.get(
       examService.examCache,
@@ -91,16 +91,13 @@ const submitExam = catchAsync(async (req, res, next) => {
       });
     }
 
-    // Mark submission as processing
-    await examService.set(examService.examCache, cacheKey, "processing", 60);
-
     // Basic checks for attempt validity - lean query for efficiency
     const attempt = await ExamAttempt.findOne({
       _id: attemptId,
       userId,
       status: { $in: ["in-progress", "timed-out"] },
     })
-      .select("examId answers status")
+      .select("examId status")
       .lean();
 
     if (!attempt) {
@@ -110,117 +107,64 @@ const submitExam = catchAsync(async (req, res, next) => {
       );
     }
 
-    let currentTimeRemaining = 0;
+    // Mark submission as processing in both cache and database
+    await examService.set(examService.examCache, cacheKey, "processing", 600); // 10 minutes expiry
+
+    // Update the attempt status in the database to "processing"
+    await ExamAttempt.updateOne(
+      { _id: attemptId },
+      { $set: { status: "processing" } }
+    );
+
+    // Save current timer state for the worker to use
     if (attempt.status === "in-progress") {
       try {
-        // Use the appropriate method from your attemptService
+        // Get current timer data
         const timerData = await attemptService.getAttemptTimer(attemptId);
 
-        if (timerData && timerData.absoluteEndTime) {
-          // Calculate current time remaining based on absolute end time
-          currentTimeRemaining = Math.max(
-            0,
-            Math.floor((timerData.absoluteEndTime - Date.now()) / 1000)
+        if (timerData) {
+          // Add a processing flag to the timer data
+          await attemptService.setAttemptTimer(
+            attemptId,
+            {
+              ...timerData,
+              processingStarted: Date.now(),
+            },
+            600 // 10 minutes
           );
-        } else {
-          // Fall back to value from database
-          currentTimeRemaining = attempt.timeRemaining || 0;
         }
-      } catch (redisError) {
-        console.error("Error getting timer data from Redis:", redisError);
-        // Fall back to value from database
-        currentTimeRemaining = attempt.timeRemaining || 0;
-      }
-    } else if (attempt.status === "timed-out") {
-      // For timed-out exams, always use 0
-      currentTimeRemaining = 0;
-    }
-
-    attempt.currentTimeRemaining = currentTimeRemaining;
-
-    // Use transaction for data consistency
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      // Get exam details from cache
-      const exam = await examService.getExam(attempt.examId.toString());
-      if (!exam) {
-        throw new Error("Exam not found");
-      }
-
-      // Get all answers from cache first
-      const answerCacheKey = `attempt:${attemptId}:answers`;
-
-      // Process evaluation in the background
-      // This simulates moving the heavy computation to a queue
-      // In production, this would be a separate worker process
-      const evaluationResult = await processExamSubmission(
-        attemptId,
-        attempt,
-        exam,
-        session
-      );
-
-      await session.commitTransaction();
-      session.endSession();
-
-      // const dbAttempt = await ExamAttempt.findById({ _id: attemptId });
-
-      // Submit completed - cache result for future requests
-      await examService.set(
-        examService.examCache,
-        `submit:${attemptId}:result`,
-        {
-          status: "success",
-          data: evaluationResult,
-        },
-        30 * 60
-      );
-
-      // Update status to completed
-      await examService.set(
-        examService.examCache,
-        cacheKey,
-        "completed",
-        30 * 60
-      );
-
-      // Clean up answer cache to save memory
-      await examService.del(examService.examCache, answerCacheKey);
-
-      // Release lock
-      await examService.examCache.del(lockKey);
-
-      // Clean up timer cache as well to prevent further processing
-      try {
-        // Use examService.del instead of direct del
-        await examService.del(examService.examCache, `timer:${attemptId}`);
       } catch (error) {
-        console.log("Non-critical error cleaning up timer cache:", error);
-        // Non-critical error, continue processing
+        console.log("Non-critical error updating timer state:", error);
       }
-
-      // Return result to client
-      return res.status(200).json({
-        status: "success",
-        data: evaluationResult,
-      });
-    } catch (error) {
-      // Abort transaction on error
-      await session.abortTransaction();
-      session.endSession();
-
-      // Update status to failed
-      await examService.set(examService.examCache, cacheKey, "failed", 5 * 60);
-
-      console.error("Error submitting exam:", error);
-
-      // Release lock
-      await examService.examCache.del(lockKey);
-
-      return next(new AppError("Failed to submit exam: " + error.message, 500));
     }
+
+    // Queue the exam for asynchronous processing
+    const queueSuccess = await queueExamSubmission(attemptId, userId);
+
+    if (!queueSuccess) {
+      // If queueing fails, revert to synchronous processing (fallback)
+      await examService.examCache.del(lockKey);
+      return next(
+        new AppError(
+          "Failed to queue exam for processing. Please try again.",
+          500
+        )
+      );
+    }
+
+    // Release lock
+    await examService.examCache.del(lockKey);
+
+    // Return immediate response to client
+    return res.status(202).json({
+      status: "processing",
+      message: "Your exam has been submitted and is being processed",
+      data: {
+        attemptId,
+        checkStatusUrl: `/api/attempt/${attemptId}/result-status`, // Provide URL for checking status
+        estimatedProcessingTime: "5-10 seconds",
+      },
+    });
   } catch (error) {
     // Release lock if any error occurred
     if (lockAcquired) {

@@ -1,12 +1,19 @@
+import dotenv from "dotenv";
+import mongoose from "mongoose";
 import { connectDB } from "../lib/connectDB.js";
+import ExamAnalytics from "../models/examAnalytics.models.js";
+import ExamAttempt from "../models/examAttempt.models.js";
+import createRedisClient from "../utils/redisClient.js";
 import {
   analyticsService,
   attemptService,
   processBatchQueue,
 } from "../services/redisService.js";
-import ExamAnalytics from "../models/examAnalytics.models.js";
-import ExamAttempt from "../models/examAttempt.models.js";
-import mongoose from "mongoose";
+
+dotenv.config();
+
+// Create a direct reference to the analytics cache
+const analyticsCache = createRedisClient("analytics:");
 
 // Connect to databases
 const startWorker = async () => {
@@ -60,17 +67,29 @@ const startBackgroundTasks = () => {
     }
   }, 2000); // Every 2 seconds
 
-  // Process adaptive timer sync for active exams
+  // Process timer sync queue
   setInterval(async () => {
     try {
-      const processed = await syncActiveExamTimers();
+      const processed = await processTimerSyncQueue();
       if (processed > 0) {
-        console.log(`[Worker] Synced timers for ${processed} active exams`);
+        console.log(`[Worker] Synced timers for ${processed} exam attempts`);
       }
     } catch (error) {
       console.error("[Worker] Error syncing exam timers:", error);
     }
-  }, 30000); // Every 30 seconds
+  }, 10000); // Every 10 seconds
+
+  // Process timed-out exams more frequently
+  setInterval(async () => {
+    try {
+      const processed = await processTimedOutExamsQueue();
+      if (processed > 0) {
+        console.log(`[Worker] Processed ${processed} timed-out exams`);
+      }
+    } catch (error) {
+      console.error("[Worker] Error processing timed-out exams:", error);
+    }
+  }, 5000); // Every 5 seconds
 
   console.log("Worker started background tasks");
 };
@@ -78,10 +97,10 @@ const startBackgroundTasks = () => {
 // Sync Redis analytics to MongoDB
 const syncAnalyticsToDb = async () => {
   try {
-    // Get all analytics keys that need syncing
-    const keys = await analyticsService.analyticsCache.keys("*needsDbSync*");
+    // Get all analytics keys that need syncing - use the new method
+    const keys = await analyticsCache.keys("*needsDbSync*");
 
-    if (keys.length === 0) {
+    if (!keys || keys.length === 0) {
       return 0;
     }
 
@@ -97,10 +116,8 @@ const syncAnalyticsToDb = async () => {
           continue;
         }
 
-        // Get all analytics data for this exam
-        const analyticsData = await analyticsService.analyticsCache.hgetall(
-          key
-        );
+        // Get all analytics data for this exam - use the new method
+        const analyticsData = await analyticsService.getHashAllFields(key);
 
         if (!analyticsData) {
           continue;
@@ -133,8 +150,8 @@ const syncAnalyticsToDb = async () => {
           { upsert: true }
         );
 
-        // Clear the needsDbSync flag
-        await analyticsService.analyticsCache.hdel(key, "needsDbSync");
+        // Clear the needsDbSync flag - use the new method
+        await analyticsService.deleteHashField(key, "needsDbSync");
       } catch (error) {
         console.error(
           `[Worker] Error syncing analytics for key ${key}:`,
@@ -153,9 +170,6 @@ const syncAnalyticsToDb = async () => {
 // Process batched answer submissions from the frontend
 const processBatchedAnswers = async () => {
   try {
-    // Get batch queue key
-    const batchQueueKey = "queue:answer_updates"; // Use correct queue name from redisService.js
-
     // Define the processor function for answer updates
     const processor = async (batchItems) => {
       // Group items by attemptId
@@ -168,6 +182,8 @@ const processBatchedAnswers = async () => {
         }
         updatesByAttempt[attemptId].push(...answers);
       });
+
+      let processedCount = 0;
 
       // Process each attempt's answers
       for (const [attemptId, answers] of Object.entries(updatesByAttempt)) {
@@ -196,25 +212,27 @@ const processBatchedAnswers = async () => {
             }
           );
 
-          // Update cache
+          // Update cache - CORRECTED USAGE
           const cacheKey = `attempt:${attemptId}:answers`;
-          const cachedData = await attemptService.get(
-            attemptService.examCache,
-            `attempt:${attemptId}:answers`
-          );
-          const currentAnswers = cachedData || {};
 
-          await attemptService.set(
-            attemptService.examCache,
+          // Get current cached data
+          const cachedData = (await attemptService.getCache(cacheKey)) || {};
+
+          // Update with new answer
+          await attemptService.setCache(
             cacheKey,
             {
-              ...currentAnswers,
+              ...cachedData,
               [questionId]: { selectedOption, responseTime: responseTime || 0 },
             },
             300 // 5 minutes
           );
         }
+
+        processedCount++;
       }
+
+      return processedCount;
     };
 
     // Use the imported processBatchQueue function
@@ -225,109 +243,54 @@ const processBatchedAnswers = async () => {
   }
 };
 
-// Sync active exam timers
-const syncActiveExamTimers = async () => {
-  try {
-    // Find active exams that need timer sync
-    const activeExams = await ExamAttempt.find({
-      status: "in-progress",
-      // Only sync exams that haven't been updated in the last minute
-      updatedAt: { $lt: new Date(Date.now() - 60000) },
-    })
-      .select("_id timeRemaining")
-      .lean();
-
-    if (activeExams.length === 0) {
-      return 0;
-    }
-
-    let processed = 0;
-
-    for (const exam of activeExams) {
-      try {
-        // Get latest time from cache
-        const cacheKey = `status:${exam._id}`;
-        const cachedTime = await attemptService.get(
-          attemptService.examCache,
-          cacheKey
-        );
-
-        if (cachedTime !== null && cachedTime !== exam.timeRemaining) {
-          // Update database with cached time
-          await ExamAttempt.updateOne(
-            { _id: exam._id },
-            { $set: { timeRemaining: cachedTime } }
-          );
-
-          processed++;
-        }
-      } catch (err) {
-        console.error(
-          `[Worker] Error syncing timer for exam ${exam._id}:`,
-          err
-        );
-      }
-    }
-
-    return processed;
-  } catch (error) {
-    console.error("[Worker] Error syncing active exam timers:", error);
-    return 0;
-  }
-};
-
-// Add these functions to the worker file
-
 // Process timer sync queue
 const processTimerSyncQueue = async () => {
   try {
-    return await attemptService.processBatchQueue(
-      "timer_sync",
-      async (items) => {
-        // Group by attemptId to prevent duplicate updates
-        const updatesByAttempt = {};
+    return await processBatchQueue("timer_sync", async (items) => {
+      // Group by attemptId to prevent duplicate updates
+      const updatesByAttempt = {};
 
-        items.forEach((item) => {
-          const { attemptId, timeRemaining, userId, timestamp } = item.data;
+      items.forEach((item) => {
+        const { attemptId, timeRemaining, userId, timestamp } = item.data;
 
-          // Only keep the most recent update for each attempt
-          if (
-            !updatesByAttempt[attemptId] ||
-            updatesByAttempt[attemptId].timestamp < timestamp
-          ) {
-            updatesByAttempt[attemptId] = { timeRemaining, userId, timestamp };
+        // Only keep the most recent update for each attempt
+        if (
+          !updatesByAttempt[attemptId] ||
+          updatesByAttempt[attemptId].timestamp < timestamp
+        ) {
+          updatesByAttempt[attemptId] = { timeRemaining, userId, timestamp };
+        }
+      });
+
+      // Process each unique attempt with Promise handling
+      const updatePromises = Object.entries(updatesByAttempt).map(
+        async ([attemptId, data]) => {
+          try {
+            await ExamAttempt.updateOne(
+              { _id: attemptId, userId: data.userId, status: "in-progress" },
+              {
+                $set: {
+                  timeRemaining: data.timeRemaining,
+                  lastDbSync: new Date(data.timestamp),
+                },
+              }
+            );
+            console.log(
+              `Updated time for attempt ${attemptId}: ${data.timeRemaining}s remaining`
+            );
+          } catch (error) {
+            console.error(
+              `Error updating time for attempt ${attemptId}:`,
+              error
+            );
           }
-        });
+        }
+      );
 
-        // Process each unique attempt with Promise handling
-        const updatePromises = Object.entries(updatesByAttempt).map(
-          async ([attemptId, data]) => {
-            try {
-              await ExamAttempt.updateOne(
-                { _id: attemptId, userId: data.userId, status: "in-progress" },
-                {
-                  $set: {
-                    timeRemaining: data.timeRemaining,
-                    lastDbSync: new Date(data.timestamp), // Use lastDbSync instead
-                  },
-                }
-              );
-              console.log(
-                `Updated time for attempt ${attemptId}: ${data.timeRemaining}s remaining`
-              );
-            } catch (error) {
-              console.error(
-                `Error updating time for attempt ${attemptId}:`,
-                error
-              );
-            }
-          }
-        );
-
-        // Wait for all updates to complete
-        await Promise.allSettled(updatePromises);
-      }
-    );
+      // Wait for all updates to complete
+      await Promise.allSettled(updatePromises);
+      return Object.keys(updatesByAttempt).length;
+    });
   } catch (error) {
     console.error("[Worker] Error processing timer sync queue:", error);
     return 0;
@@ -348,7 +311,7 @@ const processTimedOutExamsQueue = async () => {
             { _id: attemptId, status: "in-progress" },
             {
               $set: {
-                status: "timed-out",
+                status: "completed",
                 timeRemaining: 0,
                 endTime: new Date(),
               },
@@ -356,7 +319,7 @@ const processTimedOutExamsQueue = async () => {
           );
 
           if (result.modifiedCount > 0) {
-            console.log(`Exam attempt ${attemptId} marked as timed-out`);
+            console.log(`Exam attempt ${attemptId} marked as completed`);
           }
         } catch (error) {
           console.error(`Error processing timed-out exam ${attemptId}:`, error);
@@ -365,36 +328,13 @@ const processTimedOutExamsQueue = async () => {
 
       // Wait for all updates to complete
       await Promise.allSettled(updatePromises);
+      return items.length;
     });
   } catch (error) {
     console.error("[Worker] Error processing timed-out exams queue:", error);
     return 0;
   }
 };
-
-// Add these timer processing intervals to the startBackgroundTasks function
-setInterval(async () => {
-  try {
-    const processed = await processTimerSyncQueue();
-    if (processed > 0) {
-      console.log(`[Worker] Synced timers for ${processed} exam attempts`);
-    }
-  } catch (error) {
-    console.error("[Worker] Error syncing exam timers:", error);
-  }
-}, 10000); // Every 10 seconds
-
-// Process timed-out exams more frequently
-setInterval(async () => {
-  try {
-    const processed = await processTimedOutExamsQueue();
-    if (processed > 0) {
-      console.log(`[Worker] Processed ${processed} timed-out exams`);
-    }
-  } catch (error) {
-    console.error("[Worker] Error processing timed-out exams:", error);
-  }
-}, 5000); // Every 5 seconds
 
 // Handle graceful shutdown
 process.on("SIGTERM", gracefulShutdown);

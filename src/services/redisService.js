@@ -102,78 +102,6 @@ const clearPattern = async (redisClient, pattern, batchSize = 100) => {
   }
 };
 
-/**
- * Add item to batch processing queue
- */
-const addToBatchQueue = async (type, data) => {
-  try {
-    // Create a unique ID for this batch item
-    const itemId = `${type}:${Date.now()}:${Math.random()
-      .toString(36)
-      .substring(2, 10)}`;
-
-    // Add to queue for batch processing
-    await batchQueue.lpush(
-      `queue:${type}`,
-      JSON.stringify({
-        id: itemId,
-        data,
-        timestamp: Date.now(),
-      })
-    );
-
-    // Trim queue if it gets too long (prevent memory issues)
-    await batchQueue.ltrim(`queue:${type}`, 0, 10000);
-
-    return true;
-  } catch (error) {
-    console.error(`Failed to add item to batch queue (${type}):`, error);
-    return false;
-  }
-};
-
-/**
- * Process batch queue (to be called by a worker process/cron job)
- */
-const processBatchQueue = async (type, processor) => {
-  try {
-    // Get up to BATCH_SIZE items from the queue
-    const items = await batchQueue.lrange(`queue:${type}`, 0, BATCH_SIZE - 1);
-
-    if (items.length === 0) {
-      return 0;
-    }
-
-    // Parse items with individual error handling
-    const parsedItems = items
-      .map((item) => {
-        try {
-          return JSON.parse(item);
-        } catch (e) {
-          console.error(`Failed to parse batch item: ${e.message}`);
-          return null;
-        }
-      })
-      .filter(Boolean);
-
-    // Process items in batch
-    try {
-      await processor(parsedItems);
-    } catch (error) {
-      console.error(`Error in batch processor for ${type}:`, error);
-      // Continue to remove items from queue
-    }
-
-    // Remove processed items from queue
-    await batchQueue.ltrim(`queue:${type}`, items.length, -1);
-
-    return items.length;
-  } catch (error) {
-    console.error(`Error processing batch queue (${type}):`, error);
-    return 0;
-  }
-};
-
 // Enhanced exam service with batching and improved caching
 const examService = {
   // Expose generic functions
@@ -1032,10 +960,30 @@ const attemptService = {
       return false;
     }
   },
+
+  getCache: async (key) => {
+    try {
+      return await get(examCache, key);
+    } catch (error) {
+      console.error(`Error getting cache for ${key}:`, error);
+      return null;
+    }
+  },
+
+  setCache: async (key, data, ttl = 300) => {
+    try {
+      return await set(examCache, key, data, ttl);
+    } catch (error) {
+      console.error(`Error setting cache for ${key}:`, error);
+      return false;
+    }
+  },
 };
 
 // Enhanced analytics service with batching
 const analyticsService = {
+  analyticsCache,
+
   getAnalytics: async (examId) => get(analyticsCache, examId),
 
   setAnalytics: async (examId, analyticsData, ttl = DEFAULT_TTL) =>
@@ -1044,6 +992,34 @@ const analyticsService = {
   deleteAnalytics: async (examId) => del(analyticsCache, examId),
 
   clearAnalyticsCache: async () => clearPattern(analyticsCache, "*"),
+
+  // Add these new methods for the worker to use
+  getKeysWithPattern: async (pattern) => {
+    try {
+      return await analyticsCache.keys(pattern);
+    } catch (error) {
+      console.error(`Error getting keys with pattern ${pattern}:`, error);
+      return [];
+    }
+  },
+
+  getHashAllFields: async (key) => {
+    try {
+      return await analyticsCache.hgetall(key);
+    } catch (error) {
+      console.error(`Error getting hash fields for ${key}:`, error);
+      return null;
+    }
+  },
+
+  deleteHashField: async (key, field) => {
+    try {
+      return await analyticsCache.hdel(key, field);
+    } catch (error) {
+      console.error(`Error deleting hash field ${field} from ${key}:`, error);
+      return 0;
+    }
+  },
 
   // Add batched analytics updates
   queueAnalyticsUpdate: async (examId, updateData = {}) => {
@@ -1251,6 +1227,93 @@ const publicationService = {
   },
 };
 
+/**
+ * Add item to batch processing queue
+ */
+const addToBatchQueue = async (type, data) => {
+  try {
+    // Create a unique ID for this batch item
+    const itemId = `${type}:${Date.now()}:${Math.random()
+      .toString(36)
+      .substring(2, 10)}`;
+
+    // Add to queue for batch processing
+    await batchQueue.lpush(
+      `queue:${type}`,
+      JSON.stringify({
+        id: itemId,
+        data,
+        timestamp: Date.now(),
+      })
+    );
+
+    // Trim queue if it gets too long (prevent memory issues)
+    await batchQueue.ltrim(`queue:${type}`, 0, 10000);
+
+    return true;
+  } catch (error) {
+    console.error(`Failed to add item to batch queue (${type}):`, error);
+    return false;
+  }
+};
+
+/**
+ * Process batch queue (to be called by a worker process/cron job)
+ */
+const processBatchQueue = async (type, processor) => {
+  try {
+    // Get up to BATCH_SIZE items from the queue
+    const items = await batchQueue.lrange(`queue:${type}`, 0, BATCH_SIZE - 1);
+
+    if (items.length === 0) {
+      return 0;
+    }
+
+    // Parse items with individual error handling
+    const parsedItems = items
+      .map((item) => {
+        try {
+          return JSON.parse(item);
+        } catch (e) {
+          console.error(`Failed to parse batch item: ${e.message}`);
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    // Process items in batch
+    let processorResult = 0;
+    try {
+      processorResult = await processor(parsedItems);
+    } catch (error) {
+      console.error(`Error in batch processor for ${type}:`, error);
+      // Continue to remove items from queue
+    }
+
+    // Remove processed items from queue
+    await batchQueue.ltrim(`queue:${type}`, items.length, -1);
+
+    return processorResult || items.length;
+  } catch (error) {
+    console.error(`Error processing batch queue (${type}):`, error);
+    return 0;
+  }
+};
+
+// Queue exam submissions for background processing
+const queueExamSubmission = async (attemptId, userId) => {
+  try {
+    return await addToBatchQueue("exam_submissions", {
+      attemptId,
+      userId,
+      timestamp: Date.now(),
+    });
+  } catch (error) {
+    console.error(`Error queueing exam submission ${attemptId}:`, error);
+    return false;
+  }
+};
+
 // Health check method with improved diagnostics
 const checkHealth = async () => {
   try {
@@ -1368,4 +1431,5 @@ export {
   processBatchQueue,
   publicationService,
   publicationCache,
+  queueExamSubmission,
 };

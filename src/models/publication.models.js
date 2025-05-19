@@ -23,7 +23,6 @@ const PublicationSchema = new mongoose.Schema(
     isPublished: {
       type: Boolean,
       default: false,
-      index: true,
     },
     publishedAt: {
       type: Date,
