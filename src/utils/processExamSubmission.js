@@ -1,5 +1,4 @@
 // Helper function to process exam submission
-// This could be moved to a separate worker in a production environment
 import Question from "../models/questions.models.js";
 import ExamAttempt from "../models/examAttempt.models.js";
 import { analyticsService, attemptService } from "../services/redisService.js";
@@ -145,7 +144,7 @@ export const processExamSubmission = async (
   await ExamAttempt.findOneAndUpdate(
     {
       _id: attemptId,
-      status: { $in: ["in-progress", "timed-out"] },
+      status: { $in: ["in-progress", "timed-out", "processing"] },
     },
     { $set: submissionResult },
     { new: true, session }
