@@ -1,13 +1,29 @@
-// Enhanced for high concurrency and batch operations
 import Redis from "ioredis";
 
 const createRedisClient = (prefix = "") => {
-  // Determine if we should use clustered Redis based on environment
+  const isDev = process.env.NODE_ENV !== "production";
   const useCluster = process.env.REDIS_CLUSTER_ENABLED === "true";
 
   let redisClient;
 
-  if (useCluster) {
+  // Development environment - use local Redis
+  if (isDev) {
+    console.log(`Using local Redis for development (${prefix})`);
+    redisClient = new Redis({
+      host: "localhost",
+      port: 6379,
+      keyPrefix: prefix,
+      // Enable reconnection
+      retryStrategy(times) {
+        const delay = Math.min(Math.pow(2, times) * 50, 2000);
+        return delay;
+      },
+      connectionName: `exam-portal-${prefix}-dev`,
+      maxRetriesPerRequest: 3,
+    });
+  }
+  // Production with Redis Cluster
+  else if (useCluster) {
     // Create a Redis Cluster client for high-scale environments
     const nodes = [];
 
@@ -41,8 +57,31 @@ const createRedisClient = (prefix = "") => {
         disconnectTimeout: 2000,
       },
     });
-  } else {
-    // Single Redis instance for development/testing
+  }
+  // Production with REDIS_URL (preferred method)
+  else if (process.env.REDIS_URL) {
+    console.log(`Using REDIS_URL for ${prefix} (private endpoint)`);
+    redisClient = new Redis(process.env.REDIS_URL, {
+      keyPrefix: prefix,
+      retryStrategy(times) {
+        const delay = Math.min(Math.pow(2, times) * 50, 2000);
+        return delay;
+      },
+      reconnectOnError(err) {
+        const targetError = "READONLY";
+        if (err.message.includes(targetError)) {
+          return true;
+        }
+        return false;
+      },
+      connectionName: `exam-portal-${prefix}`,
+      maxRetriesPerRequest: 3,
+      enableOfflineQueue: true,
+    });
+  }
+  // Fallback to individual configuration variables
+  else {
+    console.log(`Using individual Redis config variables for ${prefix}`);
     redisClient = new Redis({
       host: process.env.REDIS_HOST,
       port: parseInt(process.env.REDIS_PORT || "6379", 10),
@@ -58,7 +97,6 @@ const createRedisClient = (prefix = "") => {
       reconnectOnError(err) {
         const targetError = "READONLY";
         if (err.message.includes(targetError)) {
-          // Only reconnect when the error matches
           return true;
         }
         return false;
