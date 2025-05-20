@@ -13,6 +13,7 @@ const createRedisClient = (prefix = "") => {
       host: "localhost",
       port: 6379,
       keyPrefix: prefix,
+      family: 0, // Enable dual stack lookup
       // Enable reconnection
       retryStrategy(times) {
         const delay = Math.min(Math.pow(2, times) * 50, 2000);
@@ -36,6 +37,7 @@ const createRedisClient = (prefix = "") => {
           process.env[`REDIS_PORT_${i}`] || process.env.REDIS_PORT || "6379",
           10
         ),
+        family: 0, // Enable dual stack lookup for each node
       });
     }
 
@@ -52,6 +54,7 @@ const createRedisClient = (prefix = "") => {
         connectTimeout: 10000,
         maxRetriesPerRequest: 3,
         enableOfflineQueue: true,
+        family: 0, // Enable dual stack lookup
         // Connection pool configuration
         connectionName: `exam-portal-${prefix}`,
         disconnectTimeout: 2000,
@@ -61,8 +64,18 @@ const createRedisClient = (prefix = "") => {
   // Production with REDIS_URL (preferred method)
   else if (process.env.REDIS_URL) {
     console.log(`Using REDIS_URL for ${prefix} (private endpoint)`);
-    redisClient = new Redis(process.env.REDIS_URL, {
+
+    // Make sure the URL has the family parameter
+    let redisUrl = process.env.REDIS_URL;
+    if (!redisUrl.includes("family=")) {
+      redisUrl = redisUrl.includes("?")
+        ? `${redisUrl}&family=0`
+        : `${redisUrl}?family=0`;
+    }
+
+    redisClient = new Redis(redisUrl, {
       keyPrefix: prefix,
+      family: 0, // Redundant but ensures it's set even if URL parameter fails
       retryStrategy(times) {
         const delay = Math.min(Math.pow(2, times) * 50, 2000);
         return delay;
@@ -88,6 +101,7 @@ const createRedisClient = (prefix = "") => {
       password: process.env.REDIS_PASSWORD,
       db: 0,
       keyPrefix: prefix,
+      family: 0, // Enable dual stack lookup
       // Enable reconnection
       retryStrategy(times) {
         const delay = Math.min(Math.pow(2, times) * 50, 2000);
