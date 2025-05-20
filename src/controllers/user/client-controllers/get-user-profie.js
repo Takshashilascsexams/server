@@ -16,8 +16,7 @@ const getProfile = catchAsync(async (req, res, next) => {
 
   // Try to get from cache first
   try {
-    const cacheKey = `profile:${userId}`;
-    const cachedData = await userService.getCache(cacheKey);
+    const cachedData = await userService.getUserDetailsById(userId);
     if (cachedData) {
       return res.status(200).json({
         status: "success",
@@ -39,19 +38,20 @@ const getProfile = catchAsync(async (req, res, next) => {
 
   // Prepare response data
   const responseData = {
-    imageUrl: user.imageUrl || null,
-    fullName: user.fullName || "User",
-    role: user.role || "Student",
-    email: user.email || "Not provided",
-    phoneNumber: user.phoneNumber || "Not provided",
-    dateOfBirth: user.dateOfBirth || "Not provided",
-    joined: user.createdAt || Date.now(),
+    user: {
+      imageUrl: user.avatar || null,
+      fullName: user.fullName || "User",
+      role: user.role || "Student",
+      email: user.email || "Not provided",
+      phoneNumber: user.phoneNumber || "Not provided",
+      dateOfBirth: user.dateOfBirth || "Not provided",
+      joined: user.createdAt || Date.now(),
+    },
   };
 
   // Cache the result for 5 minutes
   try {
-    const cacheKey = `profile:${userId}`;
-    await userService.setCache(cacheKey, responseData, 300);
+    await userService.setUserDetailsById(userId, responseData, 300);
   } catch (cacheError) {
     console.error("Failed to cache profile data:", cacheError);
   }
