@@ -23,40 +23,40 @@ rateLimitRedis.on("connect", () => {
 });
 
 // Function to get dynamic limits based on server load
-// Optimized for public usage with 500 concurrent users
+// Optimized for 150-250 concurrent users taking 30-90 minute exams
 const getDynamicLimits = () => {
   // Get current system CPU load
   const cpuLoad = os.loadavg()[0];
   const cpuCount = os.cpus().length;
   const cpuUsage = cpuLoad / cpuCount;
 
-  // Adjust limits based on current CPU load - much more generous scaling
-  // Math.max(0.7, 1 - cpuUsage) ensures we never go below 70% of max capacity
-  // This keeps the system responsive for public operations even under load
-  const loadFactor = Math.max(0.7, 1 - cpuUsage * 0.8); // Less aggressive scaling (0.8 multiplier)
+  // Adjust limits based on current CPU load
+  // Math.max(0.8, 1 - cpuUsage) ensures we never go below 80% of max capacity
+  // Higher minimum threshold for critical exam operations
+  const loadFactor = Math.max(0.8, 1 - cpuUsage * 0.7); // Less aggressive scaling
 
-  // Higher base limits with room for spikes
+  // Higher base limits for exam operations, moderate for others
   return {
-    // General API - very generous for browsing/exploration (4-5 requests per second per user)
-    apiMax: Math.floor(3000 * loadFactor), // 3000 requests per minute (50/second)
+    // General API - still generous but scaled for 250 users (2-3 requests per second per user)
+    apiMax: Math.floor(1800 * loadFactor), // 1800 requests per minute (30/second)
 
     // Authentication - slightly increased but still protected
-    authMax: Math.floor(200 * loadFactor), // 200 auth requests per 15 min
+    authMax: Math.floor(180 * loadFactor), // 180 auth requests per 15 min
 
-    // Public exam browsing operations (catalog, details, listings)
-    examBrowseMax: Math.floor(4000 * loadFactor), // 4000 browsing operations per minute
+    // Public exam browsing operations
+    examBrowseMax: Math.floor(2500 * loadFactor), // 2500 browsing operations per minute
 
-    // Exam attempt operations - generous to avoid interrupting exams
-    examAttemptMax: Math.floor(600 * loadFactor), // 600 exam attempts per minute (1.2/user)
+    // Exam attempt operations - prioritized for active exams
+    examAttemptMax: Math.floor(800 * loadFactor), // 800 exam attempts per minute (3.2/user)
 
-    // Answer saving - very high for 500 concurrent test-takers (5-6 answers per minute per user)
-    saveAnswerMax: Math.floor(3000 * loadFactor), // 3000 answer saves per minute (6/user)
+    // Answer saving - very high for exam takers (10-12 answers per minute per user)
+    saveAnswerMax: Math.floor(3500 * loadFactor), // 3500 answer saves per minute (14/user)
 
-    // Batch operations - prioritized to be efficient
-    batchAnswerMax: Math.floor(800 * loadFactor), // 800 batch operations per minute
+    // Batch operations - highly prioritized for efficiency
+    batchAnswerMax: Math.floor(1200 * loadFactor), // 1200 batch operations per minute
 
-    // Profile operations - browsing history, viewing results, etc.
-    profileMax: Math.floor(2500 * loadFactor), // 2500 profile operations per minute (5/user)
+    // Profile operations - moderated
+    profileMax: Math.floor(1500 * loadFactor), // 1500 profile operations per minute (6/user)
   };
 };
 
@@ -194,22 +194,32 @@ export const createRateLimiter = (options = {}) => {
     const cpuCount = os.cpus().length;
     const loadPercentage = (cpuLoad / cpuCount) * 100;
 
-    // Only throttle at very high CPU load (95% instead of 90%)
-    if (loadPercentage > 95) {
-      // Always allow these critical operations
-      const criticalOperation =
-        keyPrefix === "batch-answer" ||
-        keyPrefix === "save-answer" ||
-        (keyPrefix === "exam-attempt" &&
-          (req.path.includes("/submit/") || req.path.includes("/time/")));
+    // Critical exam operations should always be allowed
+    const criticalExamOperation =
+      req.path.includes("/api/v1/exam-attempt/submit/") ||
+      req.path.includes("/api/v1/exam-attempt/time/") ||
+      (keyPrefix === "save-answer" && req.method === "POST") ||
+      (keyPrefix === "batch-answer" && req.method === "POST");
 
-      if (criticalOperation) {
+    // Only throttle at very high CPU load (97% instead of 95%)
+    if (loadPercentage > 97) {
+      // Always allow critical exam operations
+      if (criticalExamOperation) {
         return next();
       }
 
-      // Even under extreme load, only throttle 10% of public requests
-      if (Math.random() > 0.9) {
-        // More informative message about system load
+      // Even under extreme load, only throttle 5% of exam-related requests
+      if (
+        (keyPrefix === "exam-attempt" ||
+          keyPrefix === "save-answer" ||
+          keyPrefix === "batch-answer") &&
+        Math.random() > 0.05
+      ) {
+        return next();
+      }
+
+      // For non-exam operations, throttle 15% of requests under high load
+      if (Math.random() > 0.85) {
         return res.status(503).json({
           status: "error",
           message:
@@ -260,16 +270,16 @@ export const examAttemptLimiter = createRateLimiter({
   message: "Too many exam operations.",
 });
 
-// Answer saving - very high limits
+// Answer saving - extended window for better stability during long exams
 export const saveAnswerLimiter = createRateLimiter({
-  windowMs: 10 * 1000, // 10 seconds
+  windowMs: 15 * 1000, // 15 seconds instead of 10
   keyPrefix: "save-answer",
   message: "You're submitting answers too quickly.",
 });
 
-// Batch operations - high priority
+// Batch operations - extended window for better stability during long exams
 export const batchAnswerLimiter = createRateLimiter({
-  windowMs: 30 * 1000, // 30 seconds
+  windowMs: 45 * 1000, // 45 seconds instead of 30
   keyPrefix: "batch-answer",
   message: "Too many batch operations.",
 });

@@ -54,14 +54,28 @@ router.post("/batch-answers/:attemptId", batchAnswerLimiter, saveBatchAnswers);
 // Save answer for a question - Very high limits for 500 concurrent test-takers
 router.post("/answer/:attemptId/:questionId", saveAnswerLimiter, saveAnswer);
 
-// Update time remaining - Critical for exam state, very generous limits
-router.put("/time/:attemptId", examAttemptLimiter, updateTimeRemaining);
+// Update time remaining - Critical for exam state
+router.put(
+  "/time/:attemptId",
+  (req, res, next) => {
+    // Bypass rate limiting for time updates to ensure exam continuity
+    next();
+  },
+  updateTimeRemaining
+);
 
 // Get current time from server
 router.get("/time-check/:attemptId", examAttemptLimiter, getCurrentTime);
 
-// Submit exam - Critical operation, must not be rate-limited aggressively
-router.post("/submit/:attemptId", examAttemptLimiter, submitExam);
+// Submit exam - Critical operation, bypass rate limiting
+router.post(
+  "/submit/:attemptId",
+  (req, res, next) => {
+    // Bypass rate limiting for exam submission
+    next();
+  },
+  submitExam
+);
 
 // Check exam status - Critical for UI state, use exam attempt limiter
 router.get("/status/:attemptId", examAttemptLimiter, checkExamStatus);
