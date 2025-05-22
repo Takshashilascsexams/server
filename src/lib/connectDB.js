@@ -1,12 +1,15 @@
 import mongoose from "mongoose";
 
+const MAX_CONNECTIONS = 300;
+const DB_CONNECTION_SAFETY_THRESHOLD = 270; // 90% threshold for warnings
+
 export const connectDB = async () => {
   try {
     const { connection } = await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 30000,
-      socketTimeoutMS: 45000,
-      maxPoolSize: 200, // Increased from 100 to 200 for 500 concurrent users
-      minPoolSize: 20, // Increased from 10 to 20 to maintain higher baseline connection count
+      socketTimeoutMS: 60000,
+      maxPoolSize: MAX_CONNECTIONS, // Increased for 150-250 concurrent users
+      minPoolSize: 25,
       connectTimeoutMS: 30000,
       heartbeatFrequencyMS: 10000,
       // Add these optimizations for read preference and write concern
@@ -96,26 +99,23 @@ export const createIndexes = async () => {
 // Function to monitor connection pool health
 export const monitorConnectionPool = async () => {
   try {
-    // For MongoDB Atlas and other restricted environments where serverStatus
-    // is not allowed, we'll use a different approach
-
-    // Get a simpler estimate of connection status from the driver
-    // Note: This doesn't require admin privileges
     const poolSize =
       mongoose.connection.client.topology?.connections?.length || 0;
-    const maxPoolSize = 200; // The configured max pool size
+    const maxPoolSize = MAX_CONNECTIONS;
+    const utilizationPercent = (poolSize / maxPoolSize) * 100;
 
     return {
       current: poolSize,
       available: maxPoolSize - poolSize,
       maxPoolSize: maxPoolSize,
-      poolUtilization: `${((poolSize / maxPoolSize) * 100).toFixed(2)}%`,
+      poolUtilization: `${utilizationPercent.toFixed(2)}%`,
+      isNearThreshold: poolSize >= DB_CONNECTION_SAFETY_THRESHOLD,
+      threshold: DB_CONNECTION_SAFETY_THRESHOLD,
     };
   } catch (error) {
-    console.error("Error monitoring connection pool:", error);
     return {
       error: error.message,
-      maxPoolSize: 200,
+      maxPoolSize: MAX_CONNECTIONS,
     };
   }
 };
