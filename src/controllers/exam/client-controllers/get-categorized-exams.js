@@ -66,7 +66,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
     const exams = await Exam.find(baseQuery)
       .sort({ createdAt: -1 })
       .select(
-        "title description category duration totalMarks difficultyLevel passMarkPercentage isFeatured isPremium price discountPrice accessPeriod bundleTags"
+        "title description category duration totalMarks difficultyLevel passMarkPercentage isFeatured isPremium price discountPrice accessPeriod bundleTags createdAt"
       )
       .lean();
 
