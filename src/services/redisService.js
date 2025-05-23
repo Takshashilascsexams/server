@@ -117,6 +117,25 @@ const examService = {
     set(examCache, `exam:${examId}`, examData, ttl),
   deleteExam: async (examId) => del(examCache, `exam:${examId}`),
 
+  // For latest published exams
+  getCache: async (key) => {
+    try {
+      return await get(examCache, key);
+    } catch (error) {
+      console.error(`Error getting cache for ${key}:`, error);
+      return null;
+    }
+  },
+
+  setCache: async (key, data, ttl = 300) => {
+    try {
+      return await set(examCache, key, data, ttl);
+    } catch (error) {
+      console.error(`Error setting cache for ${key}:`, error);
+      return false;
+    }
+  },
+
   // New helper methods for exam access
   getExamAccess: async (userId, examId) => {
     const key = `access:${userId}:${examId}`;

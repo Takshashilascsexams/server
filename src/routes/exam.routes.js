@@ -11,7 +11,7 @@ import getExamById from "../controllers/exam/admin-controllers/get-exam-by-id.js
 
 // Client controllers
 import getCategorizedExams from "../controllers/exam/client-controllers/get-categorized-exams.js";
-import getLatestTestSeries from "../controllers/exam/client-controllers/get-latest-test-series.js";
+import getLatestPublishedExams from "../controllers/exam/client-controllers/get-latest-exams.js";
 
 // Auth Middleware
 import {
@@ -29,10 +29,10 @@ const router = express.Router();
 
 // AUTHENTICATED CLIENT ROUTES - Still use the generous limiter but require auth
 router.get(
-  "/test-series",
+  "/latest-exams",
   verifyUserIsSignedIn,
   examBrowseLimiter,
-  getLatestTestSeries
+  getLatestPublishedExams
 );
 router.get(
   "/categorized",
