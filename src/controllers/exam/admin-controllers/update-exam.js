@@ -48,7 +48,7 @@ const updateExam = catchAsync(async (req, res, next) => {
     passMarkPercentage: parseInt(passMarkPercentage),
     difficultyLevel,
     category,
-    allowNavigation: allowNavigation === "Yes",
+    allowNavigation: allowNavigation ? true : false,
     isFeatured: isFeatured === "Yes",
     isPremium: isPremium === "Yes",
     price: price ? parseFloat(price) : 0,
