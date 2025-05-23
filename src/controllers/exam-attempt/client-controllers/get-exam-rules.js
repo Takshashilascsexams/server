@@ -167,11 +167,16 @@ const getExamRules = catchAsync(async (req, res, next) => {
     isPremium: exam.isPremium,
     hasAccess,
     rules: [
-      `The exam contains ${exam.totalQuestions} questions to be completed in ${exam.duration} minutes.`,
+      `The exam contains ${exam.totalQuestions} questions.`,
+      `The duration for this exam is ${exam.duration} minutes.`,
       `Each question carries ${(exam.totalMarks / exam.totalQuestions).toFixed(
         2
       )} marks.`,
-      `Passing mark is ${exam.passMarkPercentage}% of total marks.`,
+      `Passing mark is ${
+        exam.passMarkPercentage
+      }% of total marks which is ${Math.ceil(
+        (exam.passMarkPercentage / 100) * exam.totalMarks
+      )} marks.`,
       exam.hasNegativeMarking
         ? `Negative marking of ${exam.negativeMarkingValue} marks for each wrong answer.`
         : "There is no negative marking for wrong answers.",
