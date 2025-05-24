@@ -75,7 +75,7 @@ const startExam = catchAsync(async (req, res, next) => {
       // Cache miss - get from database with optimized projection
       exam = await Exam.findById(examId)
         .select(
-          "title description isActive isPremium duration totalQuestions totalMarks"
+          "title description isActive isPremium duration totalQuestions totalMarks passMarkPercentage hasNegativeMarking negativeMarkingValue allowNavigation category difficultyLevel"
         )
         .lean();
 
@@ -91,7 +91,7 @@ const startExam = catchAsync(async (req, res, next) => {
     // Fallback to database
     exam = await Exam.findById(examId)
       .select(
-        "title description isActive isPremium duration totalQuestions totalMarks"
+        "title description isActive isPremium duration totalQuestions totalMarks passMarkPercentage hasNegativeMarking negativeMarkingValue allowNavigation category difficultyLevel"
       )
       .lean();
 
