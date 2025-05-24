@@ -194,8 +194,9 @@ const startExam = catchAsync(async (req, res, next) => {
         examId,
         isActive: true,
       })
-        // .select("_id marks hasNegativeMarking negativeMarks")
-        .select("_id questionText marks type options statements")
+        .select(
+          "_id questionText marks type options statements statementInstruction"
+        )
         .lean();
 
       if (questions.length > 0) {
@@ -214,7 +215,9 @@ const startExam = catchAsync(async (req, res, next) => {
       examId,
       isActive: true,
     })
-      .select("_id marks hasNegativeMarking negativeMarks")
+      .select(
+        "_id questionText marks type options statements statementInstruction"
+      )
       .lean();
   }
 
