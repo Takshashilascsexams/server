@@ -75,7 +75,7 @@ const startExam = catchAsync(async (req, res, next) => {
       // Cache miss - get from database with optimized projection
       exam = await Exam.findById(examId)
         .select(
-          "title description isActive isPremium duration totalQuestions totalMarks passMarkPercentage hasNegativeMarking negativeMarkingValue allowNavigation category difficultyLevel"
+          "title description isActive isPremium duration totalQuestions totalMarks passMarkPercentage hasNegativeMarking negativeMarkingValue allowNavigation category difficultyLevel allowMultipleAttempts maxAttempt"
         )
         .lean();
 
@@ -88,10 +88,10 @@ const startExam = catchAsync(async (req, res, next) => {
     }
   } catch (error) {
     console.error("Error fetching exam data:", error);
-    // Fallback to database
+    // Fallback to database - ALWAYS fetch fresh data if cache fails
     exam = await Exam.findById(examId)
       .select(
-        "title description isActive isPremium duration totalQuestions totalMarks passMarkPercentage hasNegativeMarking negativeMarkingValue allowNavigation category difficultyLevel"
+        "title description isActive isPremium duration totalQuestions totalMarks passMarkPercentage hasNegativeMarking negativeMarkingValue allowNavigation category difficultyLevel allowMultipleAttempts maxAttempt"
       )
       .lean();
 
@@ -103,6 +103,47 @@ const startExam = catchAsync(async (req, res, next) => {
   // Check if exam is active
   if (!exam.isActive) {
     return next(new AppError("This exam is not currently active", 400));
+  }
+
+  // ✅ FIXED: Enhanced attempt validation with better debugging and logic
+  // Get user's attempt count for this exam
+  const userAttemptCount = await ExamAttempt.countDocuments({
+    userId,
+    examId,
+  });
+
+  // ✅ IMPROVED: More explicit validation with proper boolean handling
+  const allowMultipleAttempts = exam.allowMultipleAttempts === true; // Explicit boolean check
+  const maxAttempt = exam.maxAttempt || 1;
+
+  // ✅ FIXED: Simplified and more accurate validation logic
+  if (userAttemptCount >= maxAttempt) {
+    // User has exceeded maximum attempts
+    if (allowMultipleAttempts) {
+      return next(
+        new AppError(
+          `You have reached the maximum number of attempts (${maxAttempt}) for this exam.`,
+          403
+        )
+      );
+    } else {
+      return next(
+        new AppError(
+          "You have already attempted this exam. Multiple attempts are not allowed.",
+          403
+        )
+      );
+    }
+  }
+
+  // ✅ IMPROVED: Additional safety check for single attempt exams
+  if (!allowMultipleAttempts && userAttemptCount >= 1) {
+    return next(
+      new AppError(
+        "You have already attempted this exam. This exam allows only one attempt per user.",
+        403
+      )
+    );
   }
 
   // Phase 3: Check if user has access to the exam (for premium exams)
@@ -303,14 +344,24 @@ const startExam = catchAsync(async (req, res, next) => {
     console.error("Error scheduling question prefetch:", error);
   }
 
+  // ✅ ENHANCED: Include more comprehensive attempt information in response
+  const responseData = {
+    attemptId: newAttempt._id,
+    timeRemaining,
+    resuming: false,
+    // ✅ ENHANCED: More detailed attempt tracking info
+    attemptInfo: {
+      currentAttempt: userAttemptCount + 1,
+      maxAttempts: maxAttempt,
+      allowMultipleAttempts,
+      remainingAttempts: maxAttempt - (userAttemptCount + 1),
+    },
+  };
+
   // Return minimal information to start the exam
   res.status(201).json({
     status: "success",
-    data: {
-      attemptId: newAttempt._id,
-      timeRemaining,
-      resuming: false,
-    },
+    data: responseData,
   });
 });
 

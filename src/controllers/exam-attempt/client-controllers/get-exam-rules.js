@@ -87,7 +87,7 @@ const getExamRules = catchAsync(async (req, res, next) => {
       // Cache miss - fetch from database
       exam = await Exam.findById(examId)
         .select(
-          "title description isActive isPremium duration totalQuestions totalMarks passMarkPercentage hasNegativeMarking negativeMarkingValue allowNavigation category difficultyLevel"
+          "title description isActive isPremium duration totalQuestions totalMarks passMarkPercentage hasNegativeMarking negativeMarkingValue allowNavigation category difficultyLevel allowMultipleAttempts maxAttempt"
         )
         .lean();
 

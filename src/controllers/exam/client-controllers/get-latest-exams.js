@@ -50,15 +50,60 @@ const getLatestPublishedExams = catchAsync(async (req, res, next) => {
   }
 
   try {
-    // First, fetch latest exams with the required filters
+    // ✅ UPDATED: Fetch latest exams with attempt-related fields
     const latestExams = await Exam.find({
       isActive: true,
       $nor: [{ bundleTags: { $elemMatch: { $ne: "", $exists: true } } }],
     })
       .sort({ createdAt: -1 })
-      .select("title description isActive duration totalMarks totalQuestions")
+      .select(
+        "title description isActive duration totalMarks totalQuestions allowMultipleAttempts maxAttempt"
+      )
       .limit(LIMIT * 2) // Fetch more than needed as we'll filter some out
       .lean();
+
+    // ✅ NEW: Get all exam attempts for this user to determine attempt access
+    const allExamIds = latestExams.map((exam) => exam._id);
+    const userAttempts = await ExamAttempt.find({
+      userId,
+      examId: { $in: allExamIds },
+    })
+      .select("examId status")
+      .lean();
+
+    // ✅ NEW: Create a map of exam attempts count per exam
+    const attemptCountMap = {};
+    userAttempts.forEach((attempt) => {
+      const examId = attempt.examId.toString();
+      if (!attemptCountMap[examId]) {
+        attemptCountMap[examId] = 0;
+      }
+      attemptCountMap[examId]++;
+    });
+
+    // ✅ NEW: Helper function to determine attempt access
+    const checkAttemptAccess = (exam) => {
+      const examId = exam._id.toString();
+      const attemptCount = attemptCountMap[examId] || 0;
+
+      // If no attempts, access is always true
+      if (attemptCount === 0) {
+        return true;
+      }
+
+      // If multiple attempts are not allowed and user has attempted once
+      if (!exam.allowMultipleAttempts && attemptCount >= 1) {
+        return false;
+      }
+
+      // If multiple attempts are allowed, check against maxAttempt
+      if (exam.allowMultipleAttempts && attemptCount >= exam.maxAttempt) {
+        return false;
+      }
+
+      // User still has attempts remaining
+      return true;
+    };
 
     // Process exams to check question count and attempt status
     const processedExams = await Promise.all(
@@ -74,16 +119,18 @@ const getLatestPublishedExams = catchAsync(async (req, res, next) => {
           return null; // Skip this exam if counts don't match
         }
 
-        // Check if user has attempted this exam
-        const attemptExists = await ExamAttempt.exists({
-          userId,
-          examId: exam._id,
-        });
+        // ✅ UPDATED: Get attempt information for this specific exam
+        const examId = exam._id.toString();
+        const attemptCount = attemptCountMap[examId] || 0;
+        const hasAttempted = attemptCount > 0;
 
-        // Add the isAlreadyAttempted field
+        // ✅ NEW: Add attempt access information
         return {
           ...exam,
-          hasAttempted: !!attemptExists,
+          hasAttempted,
+          // ✅ NEW: Add attempt access fields
+          hasAttemptAccess: checkAttemptAccess(exam),
+          attemptCount,
         };
       })
     );

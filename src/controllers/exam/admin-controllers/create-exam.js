@@ -20,6 +20,8 @@ const createExam = catchAsync(async (req, res, next) => {
     difficultyLevel,
     category,
     allowNavigation,
+    allowMultipleAttempts,
+    maxAttempt = 1,
     isPremium,
     price,
     discountPrice,
@@ -42,6 +44,8 @@ const createExam = catchAsync(async (req, res, next) => {
       difficultyLevel,
       category,
       allowNavigation,
+      allowMultipleAttempts,
+      maxAttempt,
       isPremium,
       price,
       discountPrice,
@@ -51,6 +55,38 @@ const createExam = catchAsync(async (req, res, next) => {
   ) {
     return next(
       new AppError("Please provide all the fields for a new exam", 400)
+    );
+  }
+
+  // Validate attempt-related fields
+  const parsedMaxAttempt = parseInt(maxAttempt);
+  const isMultipleAttemptsAllowed =
+    allowMultipleAttempts === "Yes" || allowMultipleAttempts === true;
+
+  if (parsedMaxAttempt < 1 || parsedMaxAttempt > 2) {
+    return next(
+      new AppError(
+        "Minimum attempt should be 1 and maximum attempt should be 2",
+        400
+      )
+    );
+  }
+
+  if (!isMultipleAttemptsAllowed && parsedMaxAttempt > 1) {
+    return next(
+      new AppError(
+        "When multiple attempts are not allowed, maximum attempts should be 1",
+        400
+      )
+    );
+  }
+
+  if (isMultipleAttemptsAllowed && parsedMaxAttempt === 1) {
+    return next(
+      new AppError(
+        "When multiple attempts are allowed, maximum attempts should be greater than 1",
+        400
+      )
     );
   }
 
@@ -90,6 +126,8 @@ const createExam = catchAsync(async (req, res, next) => {
     difficultyLevel,
     category,
     allowNavigation: allowNavigation === "Yes" ? true : false,
+    allowMultipleAttempts: isMultipleAttemptsAllowed,
+    maxAttempt: parsedMaxAttempt,
     isPremium: isPremium === "Yes" ? true : false,
     price: price ? parseFloat(price) : 0,
     discountPrice: discountPrice ? parseFloat(discountPrice) : 0,

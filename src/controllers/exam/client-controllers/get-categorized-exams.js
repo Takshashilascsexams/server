@@ -1,5 +1,6 @@
 import Exam from "../../../models/exam.models.js";
 import Payment from "../../../models/payment.models.js";
+import ExamAttempt from "../../../models/examAttempt.models.js";
 import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { examService, paymentService } from "../../../services/redisService.js";
 import { examCategory } from "../../../utils/arrays.js";
@@ -62,11 +63,11 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
     // Get total count of active exams
     const total = await Exam.countDocuments(baseQuery);
 
-    // Fetch all active exams with pagination
+    // Added attempt-related fields to the select query
     const exams = await Exam.find(baseQuery)
       .sort({ createdAt: -1 })
       .select(
-        "title description category duration totalMarks difficultyLevel passMarkPercentage isFeatured isPremium price discountPrice accessPeriod bundleTags createdAt"
+        "title description category duration totalMarks difficultyLevel passMarkPercentage isFeatured isPremium price discountPrice accessPeriod bundleTags createdAt allowMultipleAttempts maxAttempt"
       )
       .lean();
 
@@ -112,6 +113,49 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
       );
     }
 
+    // Get all exam attempts for this user to determine attempt access
+    const allExamIds = exams.map((exam) => exam._id);
+    const userAttempts = await ExamAttempt.find({
+      userId,
+      examId: { $in: allExamIds },
+    })
+      .select("examId status")
+      .lean();
+
+    // Create a map of exam attempts count per exam
+    const attemptCountMap = {};
+    userAttempts.forEach((attempt) => {
+      const examId = attempt.examId.toString();
+      if (!attemptCountMap[examId]) {
+        attemptCountMap[examId] = 0;
+      }
+      attemptCountMap[examId]++;
+    });
+
+    // Helper function to determine attempt access
+    const checkAttemptAccess = (exam) => {
+      const examId = exam._id.toString();
+      const attemptCount = attemptCountMap[examId] || 0;
+
+      // If no attempts, access is always true
+      if (attemptCount === 0) {
+        return true;
+      }
+
+      // If multiple attempts are not allowed and user has attempted once
+      if (!exam.allowMultipleAttempts && attemptCount >= 1) {
+        return false;
+      }
+
+      // If multiple attempts are allowed, check against maxAttempt
+      if (exam.allowMultipleAttempts && attemptCount >= exam.maxAttempt) {
+        return false;
+      }
+
+      // User still has attempts remaining
+      return true;
+    };
+
     // Create bundles based on bundle tags
     const bundles = [];
 
@@ -125,9 +169,15 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
       // Only create the bundle if we have enough exams
       const minExams = bundleDef.minExams || 1;
       if (examsWithTag.length >= minExams) {
+        // Add attempt access to each exam in bundle before creating bundle
+        const examsWithAttemptAccess = examsWithTag.map((exam) => ({
+          ...exam,
+          hasAttemptAccess: checkAttemptAccess(exam),
+        }));
+
         // Create a bundle using the helper function
         const bundle = createBundleFromExams(
-          examsWithTag,
+          examsWithAttemptAccess,
           bundleDef,
           userAccessMap
         );
@@ -142,7 +192,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
     // Add bundles to the BUNDLE category
     categorizedExams["BUNDLE"] = bundles;
 
-    // Group exams by category and add hasAccess property
+    // Group exams by category and add hasAccess and hasAttemptAccess properties
     exams.forEach((exam) => {
       // Mark exams that are part of a bundle
       bundles.forEach((bundle) => {
@@ -155,8 +205,14 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
       // Convert _id to string for comparison
       const examId = exam._id.toString();
 
-      // Add hasAccess flag
+      // Add hasAccess flag (existing logic)
       exam.hasAccess = exam.isPremium ? !!userAccessMap[examId] : true;
+
+      // Add hasAttemptAccess flag
+      exam.hasAttemptAccess = checkAttemptAccess(exam);
+
+      // Add attempt count for debugging/UI purposes (optional)
+      exam.attemptCount = attemptCountMap[examId] || 0;
 
       // Add to original category
       if (categorizedExams[exam.category]) {
