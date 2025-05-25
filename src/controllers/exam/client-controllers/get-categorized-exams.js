@@ -102,6 +102,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
 
       // Merge the cached map with the database results (database takes precedence)
       userAccessMap = { ...userAccessMap, ...dbAccessMap };
+      console.log(userAccessMap);
 
       // Update the cache with the merged results (longer TTL)
       await paymentService.setUserExamAccess(
@@ -122,7 +123,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
       );
 
       // Only create the bundle if we have enough exams
-      const minExams = bundleDef.minExams || 2;
+      const minExams = bundleDef.minExams || 1;
       if (examsWithTag.length >= minExams) {
         // Create a bundle using the helper function
         const bundle = createBundleFromExams(

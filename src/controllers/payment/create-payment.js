@@ -61,7 +61,7 @@ const createPayment = catchAsync(async (req, res, next) => {
       .select("_id title price discountPrice duration totalMarks")
       .lean();
 
-    if (bundledExams.length < (bundleDef.minExams || 2)) {
+    if (bundledExams.length < (bundleDef.minExams || 1)) {
       return next(
         new AppError("Not enough exams available in this bundle", 404)
       );
