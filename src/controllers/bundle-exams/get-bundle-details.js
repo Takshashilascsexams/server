@@ -1,5 +1,6 @@
 import Exam from "../../models/exam.models.js";
 import Payment from "../../models/payment.models.js";
+import ExamAttempt from "../../models/examAttempt.models.js";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import { getUserId } from "../../utils/cachedDbQueries.js";
 import { examService, paymentService } from "../../services/redisService.js";
@@ -76,19 +77,69 @@ const getBundleDetails = catchAsync(async (req, res, next) => {
       }
     }
 
-    // Fetch all exams with the bundle tag
+    // ✅ UPDATED: Fetch all exams with attempt-related fields
     const bundledExams = await Exam.find({
       bundleTags: bundleDefinition.tag,
       isActive: true,
     })
       .select(
-        "_id title description category duration totalMarks difficultyLevel passMarkPercentage isFeatured isPremium"
+        "_id title description category duration totalMarks difficultyLevel passMarkPercentage isFeatured isPremium allowMultipleAttempts maxAttempt"
       )
       .lean();
 
     if (bundledExams.length === 0) {
       return next(new AppError("No active exams found in this bundle", 404));
     }
+
+    // ✅ NEW: Get all exam attempts for this user to determine attempt access
+    const allExamIds = bundledExams.map((exam) => exam._id);
+    const userAttempts = await ExamAttempt.find({
+      userId,
+      examId: { $in: allExamIds },
+    })
+      .select("examId status")
+      .lean();
+
+    // ✅ NEW: Create a map of exam attempts count per exam
+    const attemptCountMap = {};
+    userAttempts.forEach((attempt) => {
+      const examId = attempt.examId.toString();
+      if (!attemptCountMap[examId]) {
+        attemptCountMap[examId] = 0;
+      }
+      attemptCountMap[examId]++;
+    });
+
+    // ✅ NEW: Helper function to determine attempt access
+    const checkAttemptAccess = (exam) => {
+      const examId = exam._id.toString();
+      const attemptCount = attemptCountMap[examId] || 0;
+
+      // If no attempts, access is always true
+      if (attemptCount === 0) {
+        return true;
+      }
+
+      // If multiple attempts are not allowed and user has attempted once
+      if (!exam.allowMultipleAttempts && attemptCount >= 1) {
+        return false;
+      }
+
+      // If multiple attempts are allowed, check against maxAttempt
+      if (exam.allowMultipleAttempts && attemptCount >= exam.maxAttempt) {
+        return false;
+      }
+
+      // User still has attempts remaining
+      return true;
+    };
+
+    // ✅ NEW: Add attempt access information to each bundled exam
+    const bundledExamsWithAttemptAccess = bundledExams.map((exam) => ({
+      ...exam,
+      hasAttemptAccess: checkAttemptAccess(exam),
+      attemptCount: attemptCountMap[exam._id.toString()] || 0,
+    }));
 
     // Format the bundle data
     // Using total values calculated from the bundled exams
@@ -120,7 +171,7 @@ const getBundleDetails = catchAsync(async (req, res, next) => {
       discountedPrice = 0;
     }
 
-    // Create the bundle object
+    // Create the bundle object with attempt access information
     const bundle = {
       _id: bundleId,
       title: bundleDefinition.title,
@@ -139,7 +190,13 @@ const getBundleDetails = catchAsync(async (req, res, next) => {
       hasAccess,
       isBundle: true,
       bundleTag: bundleDefinition.tag,
-      bundledExams,
+      // ✅ NEW: Add bundle-level attempt access information
+      hasAttemptAccess: hasAccess, // Bundle access equals attempt access for bundles
+      attemptCount: bundledExamsWithAttemptAccess.reduce(
+        (sum, exam) => sum + exam.attemptCount,
+        0
+      ),
+      bundledExams: bundledExamsWithAttemptAccess,
     };
 
     // Prepare the response data
