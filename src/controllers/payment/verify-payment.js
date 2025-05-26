@@ -193,7 +193,7 @@ const verifyPayment = catchAsync(async (req, res, next) => {
     );
 
     // IMPORTANT: Clear only the user-specific categorized exams cache
-    const cacheKey = `categorized:${userId.toString()}`;
+    const cacheKey = `${userId.toString()}`;
     await examService.clearUserSpecificExamsCache(cacheKey);
 
     res.status(200).json({
