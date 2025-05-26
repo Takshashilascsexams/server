@@ -21,9 +21,13 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
     return next(new AppError("User not found", 404));
   }
 
+  const userIdString = userId.toString();
+
   try {
     // Check if we have cached data for this specific user
-    const cachedData = await examService.getUserSpecificExamsCache(userId);
+    const cachedData = await examService.getUserSpecificExamsCache(
+      userIdString
+    );
 
     if (cachedData) {
       return res.status(200).json({
@@ -100,7 +104,6 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
 
       // Merge the cached map with the database results (database takes precedence)
       userAccessMap = { ...userAccessMap, ...dbAccessMap };
-      console.log(userAccessMap);
 
       // Update the cache with the merged results (longer TTL)
       await paymentService.setUserExamAccess(
@@ -241,7 +244,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
     // Cache the result for 15 minutes (shorter TTL since it includes user-specific access data)
     try {
       await examService.setUserSpecificExamsCache(
-        userId,
+        userIdString,
         responseData,
         15 * 60
       );
