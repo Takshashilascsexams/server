@@ -164,11 +164,53 @@ const createExam = catchAsync(async (req, res, next) => {
       newExam._id.toString(),
       examAnalytics.toJSON()
     ),
-    // Clear the "all exams" cache since we've added a new exam
-    // examService.clearExamCache(),
-    examService.clearLatestExamsCache(),
-    examService.clearCategorizedExamsCache(),
   ]);
+
+  // Comprehensive cache clearing for all affected controllers
+  try {
+    await Promise.allSettled([
+      // 1. Clear getExamDashboard cache - admin dashboard cache
+      examService.clearPattern(
+        examService.examCache,
+        "admin:dashboard:exams:*"
+      ),
+
+      // 2. Clear getExamById cache - individual exam cache for editing
+      examService.clearPattern(examService.examCache, "admin:exam:*"),
+
+      // 3. Clear getExamDetails cache - detailed exam analytics cache
+      examService.clearPattern(examService.examCache, "admin:exam:details:*"),
+
+      // 4. Clear getCategorizedExams cache - user-specific categorized exams (FIXED)
+      // This controller uses getUserSpecificExamsCache which has pattern "categorized:shardId:userId"
+      examService.clearCategorizedExamsCache(), // This clears categorized:*:* pattern for all 16 shards
+
+      // Additional clear for any direct categorized cache keys
+      examService.clearPattern(examService.examCache, "categorized:*"), // Clear all categorized cache patterns
+
+      // 5. Clear getLatestPublishedExams cache - latest exams for users
+      examService.clearLatestExamsCache(), // This clears latest:* pattern
+
+      // 6. Clear getBundleDetails cache - bundle-specific cache for all users
+      examService.clearAllBundleCache(), // This clears bundle:*:*:* pattern
+
+      // 7. Clear additional patterns used by getCategorizedExams
+      examService.clearPattern(examService.examCache, "categorized:*"), // Clear all sharded user-specific cache
+
+      // 8. Clear general exam cache patterns
+      examService.clearPattern(examService.examCache, "exam:*"),
+      examService.clearPattern(examService.examCache, "latest:*"),
+
+      // 9. Clear user-specific exam access cache (since new exam affects access)
+      examService.clearPattern(examService.examCache, "access:*"),
+
+      // 10. Clear any remaining cache patterns that might be used
+      examService.clearPattern(examService.examCache, "latest:published:*"), // getLatestPublishedExams specific pattern
+    ]);
+  } catch (cacheError) {
+    console.error("Failed to clear comprehensive exam cache:", cacheError);
+    // Continue execution even if cache clearing fails
+  }
 
   res.status(201).json({
     status: "success",

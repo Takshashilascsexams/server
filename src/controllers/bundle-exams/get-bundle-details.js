@@ -3,7 +3,7 @@ import Payment from "../../models/payment.models.js";
 import ExamAttempt from "../../models/examAttempt.models.js";
 import { catchAsync, AppError } from "../../utils/errorHandler.js";
 import { getUserId } from "../../utils/cachedDbQueries.js";
-import { examService, paymentService } from "../../services/redisService.js";
+import { examService } from "../../services/redisService.js";
 import { BUNDLE_DEFINITIONS } from "../../utils/bundleDefinitions.js";
 
 /**
