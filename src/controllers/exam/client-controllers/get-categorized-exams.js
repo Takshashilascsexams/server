@@ -21,12 +21,9 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
     return next(new AppError("User not found", 404));
   }
 
-  // Create a cache key that includes the user ID
-  const cacheKey = `categorized:${userId}`;
-
   try {
     // Check if we have cached data for this specific user
-    const cachedData = await examService.getUserSpecificExamsCache(cacheKey);
+    const cachedData = await examService.getUserSpecificExamsCache(userId);
 
     if (cachedData) {
       return res.status(200).json({
@@ -244,7 +241,7 @@ const getCategorizedExams = catchAsync(async (req, res, next) => {
     // Cache the result for 15 minutes (shorter TTL since it includes user-specific access data)
     try {
       await examService.setUserSpecificExamsCache(
-        cacheKey,
+        userId,
         responseData,
         15 * 60
       );
