@@ -3,7 +3,11 @@ import mongoose from "mongoose";
 import { connectDB, monitorConnectionPool } from "../lib/connectDB.js";
 import ExamAttempt from "../models/examAttempt.models.js";
 import Exam from "../models/exam.models.js";
-import { processBatchQueue, examService } from "../services/redisService.js";
+import {
+  processBatchQueue,
+  examService,
+  publicationService,
+} from "../services/redisService.js";
 import { processExamSubmission } from "../utils/processExamSubmission.js";
 
 dotenv.config();
@@ -255,22 +259,40 @@ const processExamsOptimized = () => {
 //   }
 // };
 
-// ✅ HELPER FUNCTION: Cache clearing with detailed logging
+// ✅ UPDATED HELPER FUNCTION: Cache clearing with user attempts invalidation
 const clearExamCaches = async (userId) => {
   try {
     const userIdString = userId.toString();
-    const [userCacheResult, latestCacheResult, bundleCacheResult] =
-      await Promise.allSettled([
-        examService.clearUserSpecificExamsCache(userIdString),
-        examService.clearLatestExamsCache(),
-        examService.clearAllBundleCache(),
-      ]);
+
+    // Import publicationService if not already imported
+    const { publicationService } = await import("../services/redisService.js");
+
+    const [
+      userCacheResult,
+      latestCacheResult,
+      bundleCacheResult,
+      userAttemptsResult,
+    ] = await Promise.allSettled([
+      examService.clearUserSpecificExamsCache(userIdString),
+      examService.clearLatestExamsCache(),
+      examService.clearAllBundleCache(),
+      publicationService.clearUserExamAttempts(userIdString), // 🆕 Clear user's exam attempts cache
+    ]);
 
     // Log results with detailed status
     const cacheOperations = [
-      { name: "user-specific", result: userCacheResult, userId: userIdString },
+      {
+        name: "user-specific exams",
+        result: userCacheResult,
+        userId: userIdString,
+      },
       { name: "latest exams", result: latestCacheResult },
       { name: "bundle", result: bundleCacheResult },
+      {
+        name: "user exam attempts",
+        result: userAttemptsResult,
+        userId: userIdString,
+      }, // 🆕 New cache operation
     ];
 
     cacheOperations.forEach(({ name, result, userId }) => {
@@ -290,7 +312,7 @@ const clearExamCaches = async (userId) => {
       (op) => op.result.status === "fulfilled"
     ).length;
     console.log(
-      `🧹 [Exam Processor] Cache clearing completed: ${successCount}/3 operations successful`
+      `🧹 [Exam Processor] Cache clearing completed: ${successCount}/4 operations successful` // Updated count
     );
   } catch (error) {
     console.error(

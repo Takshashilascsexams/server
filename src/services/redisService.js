@@ -1244,6 +1244,33 @@ const publicationService = {
     ]);
     return true;
   },
+
+  // NEW: User exam attempts cache methods
+  getUserExamAttempts: async (cacheKey) => {
+    return get(publicationCache, cacheKey);
+  },
+
+  setUserExamAttempts: async (cacheKey, attemptsData, ttl = 300) => {
+    // 5 minutes default TTL
+    return set(publicationCache, cacheKey, attemptsData, ttl);
+  },
+
+  clearUserExamAttempts: async (userId) => {
+    // Clear all cached attempts for a specific user
+    return clearPattern(publicationCache, `user:${userId}:attempts:*`);
+  },
+
+  clearAllUserAttempts: async () => {
+    // Clear all user attempts cache
+    return clearPattern(publicationCache, "user:*:attempts:*");
+  },
+
+  // Clear user attempts when exam data changes
+  invalidateUserAttemptsForExam: async (examId) => {
+    // This would require getting all users who attempted this exam
+    // For now, we'll clear all user attempts cache as a safe approach
+    return clearPattern(publicationCache, "user:*:attempts:*");
+  },
 };
 
 /**
