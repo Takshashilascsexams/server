@@ -1,4 +1,3 @@
-import mongoose from "mongoose";
 import ExamAttempt from "../../../models/examAttempt.models.js";
 import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { getUserId } from "../../../utils/cachedDbQueries.js";
