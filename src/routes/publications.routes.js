@@ -2,6 +2,7 @@ import express from "express";
 
 // client controllers
 import getActivePublications from "../controllers/publication/client-controllers/get-active-publications.js";
+import getUserExamAttempts from "../controllers/publication/client-controllers/get-user-exam-attempts.js";
 
 // admin controllers
 import getExamPublications from "../controllers/publication/admin-controllers/get-exam-publications.js";
@@ -26,6 +27,7 @@ router.use(verifyUserIsSignedIn);
 
 // Regular authenticated route - With public-friendly browsing limits
 router.get("/active", examBrowseLimiter, getActivePublications);
+router.get("/user/attempts", examBrowseLimiter, getUserExamAttempts);
 
 // Admin routes - require admin role
 router.use(verifyUserIsAdmin);
