@@ -20,6 +20,7 @@ import getCurrentTime from "../controllers/exam-attempt/client-controllers/get-c
 import getAdminRankings from "../controllers/exam-attempt/admin-controllers/get-admin-rankings.js";
 import getStudentDetailedResult from "../controllers/exam-attempt/admin-controllers/get-student-detailed-result.js";
 import getExamResults from "../controllers/exam-attempt/admin-controllers/get-exam-results.js";
+import recalculateExamAttempt from "../controllers/exam-attempt/admin-controllers/recalculate-exam-attempt.js";
 
 import {
   verifyUserIsSignedIn,
@@ -98,5 +99,10 @@ router.get("/export-rankings/:examId", apiLimiter, exportRankings);
 router.get("/admin-rankings/:examId", apiLimiter, getAdminRankings);
 router.get("/student-result/:attemptId", apiLimiter, getStudentDetailedResult);
 router.get("/exam/:examId/results", apiLimiter, getExamResults);
+router.patch(
+  "/admin-recalculate/:attemptId",
+  apiLimiter,
+  recalculateExamAttempt
+);
 
 export default router;
