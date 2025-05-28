@@ -237,8 +237,7 @@ const uploadBulkQuestions = catchAsync(async (req, res, next) => {
         correctAnswer: correctAnswerText,
         difficultyLevel,
         subject,
-        hasNegativeMarking:
-          hasNegativeMarking === "true" || hasNegativeMarking === true,
+        hasNegativeMarking: hasNegativeMarking === "Yes" ? true : false,
         negativeMarks: parseFloat(negativeMarks),
         explanation: q.explanation || "",
         isActive: true,
