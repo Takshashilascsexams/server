@@ -35,6 +35,7 @@ import bundleExamRoute from "./routes/bundle-exam.routes.js";
 import examAttemptRoute from "./routes/exam-attempt.routes.js";
 import publicationsRoute from "./routes/publications.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
+import feedbackRoutes from "./routes/feedback.routes.js";
 
 // ----------------------------------------
 // 2. CONFIGURATION
@@ -357,6 +358,7 @@ app.use("/api/v1/bundle-exam", bundleExamRoute);
 app.use("/api/v1/exam-attempt", examAttemptRoute);
 app.use("/api/v1/publications", publicationsRoute);
 app.use("/api/v1/profile", profileRoutes);
+app.use("/api/v1/feedback", feedbackRoutes);
 
 // ----------------------------------------
 // 6. ERROR HANDLING (APPLICATION LEVEL)

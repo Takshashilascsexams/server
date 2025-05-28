@@ -1273,8 +1273,6 @@ const publicationService = {
   },
 };
 
-// Add this to your existing redisService.js file after the existing services
-
 // Enhanced dashboard service with comprehensive caching
 const dashboardService = {
   // Dashboard stats caching
@@ -1595,6 +1593,27 @@ const dashboardService = {
   },
 };
 
+// Feedback service with caching
+const feedbackService = {
+  getTopFeedbacks: async (limit = 4, anonymous = false) => {
+    const cacheKey = `feedback:top:platform:${limit}:${anonymous}`;
+    return get(examCache, cacheKey);
+  },
+
+  setTopFeedbacks: async (limit, anonymous, feedbacks, ttl = 15 * 60) => {
+    const cacheKey = `feedback:top:platform:${limit}:${anonymous}`;
+    return set(examCache, cacheKey, feedbacks, ttl);
+  },
+
+  clearPlatformFeedbackCache: async () => {
+    return clearPattern(examCache, "feedback:top:platform:*");
+  },
+
+  clearAllFeedbackCache: async () => {
+    return clearPattern(examCache, "feedback:*");
+  },
+};
+
 /**
  * Add item to batch processing queue
  */
@@ -1801,4 +1820,5 @@ export {
   publicationCache,
   queueExamSubmission,
   dashboardService,
+  feedbackService,
 };
