@@ -348,7 +348,7 @@ app.get("/", (req, res) => {
 });
 
 // API routes
-app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/exam", examRoute);
 app.use("/api/v1/questions", questionsRoute);
 app.use("/api/v1/user", userRoute);
