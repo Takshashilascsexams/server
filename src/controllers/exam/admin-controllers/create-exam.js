@@ -121,7 +121,7 @@ const createExam = catchAsync(async (req, res, next) => {
     totalQuestions: parseInt(totalQuestions),
     totalMarks: parseInt(totalMarks),
     hasNegativeMarking: hasNegativeMarking === "Yes" ? true : false,
-    negativeMarkingValue: parseInt(negativeMarkingValue),
+    negativeMarkingValue: parseFloat(negativeMarkingValue),
     passMarkPercentage: parseInt(passMarkPercentage),
     difficultyLevel,
     category,

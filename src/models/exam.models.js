@@ -48,6 +48,12 @@ const ExamSchema = new mongoose.Schema(
       type: Number,
       enum: negativeMarkingValue,
       default: 0,
+      validate: {
+        validator: function (value) {
+          return value >= 0; // Negative marks value should be positive or zero
+        },
+        message: "Negative marks value cannot be negative",
+      },
     },
     passMarkPercentage: {
       type: Number,

@@ -69,7 +69,7 @@ export const tags = [
   "APSC",
   "BUNDLE",
 ];
-export const negativeMarkingValue = [0, 2.5, 0.5];
+export const negativeMarkingValue = [0, 0.25, 0.5];
 
 // Question model types
 export const questionTypes = [

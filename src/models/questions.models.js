@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
-import { questionTypes, difficultyLevel } from "../utils/arrays.js";
+import {
+  questionTypes,
+  difficultyLevel,
+  negativeMarkingValue,
+} from "../utils/arrays.js";
 
 // schema for options
 const optionSchema = new mongoose.Schema(
@@ -116,6 +120,7 @@ const questionSchema = new mongoose.Schema(
     },
     negativeMarks: {
       type: Number,
+      enum: negativeMarkingValue,
       default: 0,
       validate: {
         validator: function (value) {
