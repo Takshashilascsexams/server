@@ -26,6 +26,7 @@ import { checkHealth, examService } from "./services/redisService.js";
 import { configurePdfServer } from "./utils/configurePdfServer.js";
 
 // Routes
+import dashboardRoutes from "./routes/dashboard.routes.js";
 import userRoute from "./routes/user.routes.js";
 import examRoute from "./routes/exam.routes.js";
 import questionsRoute from "./routes/question.routes.js";
@@ -347,9 +348,10 @@ app.get("/", (req, res) => {
 });
 
 // API routes
-app.use("/api/v1/user", userRoute);
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/v1/exam", examRoute);
 app.use("/api/v1/questions", questionsRoute);
+app.use("/api/v1/user", userRoute);
 app.use("/api/v1/payments", paymentRoute);
 app.use("/api/v1/bundle-exam", bundleExamRoute);
 app.use("/api/v1/exam-attempt", examAttemptRoute);

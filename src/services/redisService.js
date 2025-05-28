@@ -1273,6 +1273,328 @@ const publicationService = {
   },
 };
 
+// Add this to your existing redisService.js file after the existing services
+
+// Enhanced dashboard service with comprehensive caching
+const dashboardService = {
+  // Dashboard stats caching
+  getDashboardStats: async (cacheKey) => {
+    return get(examCache, cacheKey);
+  },
+
+  setDashboardStats: async (cacheKey, statsData, ttl = 10 * 60) => {
+    return set(examCache, cacheKey, statsData, ttl);
+  },
+
+  // Performance data caching
+  getPerformanceData: async (timeRange = "7d") => {
+    const cacheKey = `performance:${timeRange}`;
+    return get(examCache, cacheKey);
+  },
+
+  setPerformanceData: async (timeRange, data, ttl = 5 * 60) => {
+    const cacheKey = `performance:${timeRange}`;
+    return set(examCache, cacheKey, data, ttl);
+  },
+
+  // Recent activity caching
+  getRecentActivity: async () => {
+    return get(examCache, "recent:activity");
+  },
+
+  setRecentActivity: async (activities, ttl = 3 * 60) => {
+    return set(examCache, "recent:activity", activities, ttl);
+  },
+
+  // Quick actions cache (for dynamic action availability)
+  getQuickActions: async (userRole = "admin") => {
+    return get(examCache, `actions:${userRole}`);
+  },
+
+  setQuickActions: async (userRole, actions, ttl = 30 * 60) => {
+    return set(examCache, `actions:${userRole}`, actions, ttl);
+  },
+
+  // Dashboard overview stats with growth metrics
+  getOverviewStats: async () => {
+    return get(examCache, "overview:stats");
+  },
+
+  setOverviewStats: async (stats, ttl = 15 * 60) => {
+    return set(examCache, "overview:stats", stats, ttl);
+  },
+
+  // System health metrics for admin dashboard
+  getSystemHealth: async () => {
+    return get(examCache, "system:health");
+  },
+
+  setSystemHealth: async (healthData, ttl = 2 * 60) => {
+    return set(examCache, "system:health", healthData, ttl);
+  },
+
+  // Exam performance metrics cache
+  getExamPerformanceMetrics: async (examId) => {
+    return get(examCache, `exam:${examId}:performance`);
+  },
+
+  setExamPerformanceMetrics: async (examId, metrics, ttl = 10 * 60) => {
+    return set(examCache, `exam:${examId}:performance`, metrics, ttl);
+  },
+
+  // Student engagement metrics
+  getStudentEngagement: async (timeframe = "weekly") => {
+    return get(examCache, `engagement:${timeframe}`);
+  },
+
+  setStudentEngagement: async (timeframe, data, ttl = 15 * 60) => {
+    return set(examCache, `engagement:${timeframe}`, data, ttl);
+  },
+
+  // Dashboard widgets configuration cache
+  getWidgetConfig: async (userId) => {
+    return get(examCache, `widgets:${userId}`);
+  },
+
+  setWidgetConfig: async (userId, config, ttl = 24 * 60 * 60) => {
+    return set(examCache, `widgets:${userId}`, config, ttl);
+  },
+
+  // Real-time statistics for live dashboard updates
+  getLiveStats: async () => {
+    return get(examCache, "live:stats");
+  },
+
+  setLiveStats: async (stats, ttl = 30) => {
+    return set(examCache, "live:stats", stats, ttl);
+  },
+
+  // Batch operations for dashboard data
+  bulkGetDashboardData: async (keys) => {
+    try {
+      const fullKeys = keys.map((key) =>
+        key.startsWith("dashboard:") ? key : `dashboard:${key}`
+      );
+      const results = await examCache.mget(...fullKeys);
+
+      return results
+        .map((data, index) => {
+          if (!data) return null;
+          try {
+            return {
+              key: keys[index],
+              data: JSON.parse(data),
+            };
+          } catch (e) {
+            return null;
+          }
+        })
+        .filter(Boolean);
+    } catch (error) {
+      console.error("Redis bulk get dashboard data error:", error);
+      return [];
+    }
+  },
+
+  bulkSetDashboardData: async (dataItems, ttl = 10 * 60) => {
+    try {
+      const pipeline = examCache.pipeline();
+
+      dataItems.forEach(({ key, data }) => {
+        const fullKey = key.startsWith("dashboard:") ? key : `dashboard:${key}`;
+        pipeline.set(fullKey, JSON.stringify(data), "EX", ttl);
+      });
+
+      await pipeline.exec();
+      return true;
+    } catch (error) {
+      console.error("Redis bulk set dashboard data error:", error);
+      return false;
+    }
+  },
+
+  // Clear all dashboard caches
+  clearDashboardCache: async () => {
+    try {
+      await Promise.all([
+        clearPattern(examCache, "admin:dashboard:*"),
+        clearPattern(examCache, "performance:*"),
+        clearPattern(examCache, "recent:*"),
+        clearPattern(examCache, "overview:*"),
+        clearPattern(examCache, "system:*"),
+        clearPattern(examCache, "engagement:*"),
+        clearPattern(examCache, "live:*"),
+      ]);
+      return true;
+    } catch (error) {
+      console.error("Error clearing dashboard cache:", error);
+      return false;
+    }
+  },
+
+  // Invalidate specific dashboard sections
+  invalidateDashboardSection: async (section) => {
+    try {
+      switch (section) {
+        case "stats":
+          await clearPattern(examCache, "admin:dashboard:stats*");
+          break;
+        case "performance":
+          await clearPattern(examCache, "performance:*");
+          break;
+        case "activity":
+          await clearPattern(examCache, "recent:*");
+          break;
+        case "overview":
+          await clearPattern(examCache, "overview:*");
+          break;
+        case "engagement":
+          await clearPattern(examCache, "engagement:*");
+          break;
+        default:
+          await dashboardService.clearDashboardCache();
+      }
+      return true;
+    } catch (error) {
+      console.error(`Error invalidating dashboard section ${section}:`, error);
+      return false;
+    }
+  },
+
+  // Analytics aggregation cache
+  getAnalyticsAggregation: async (type, period) => {
+    return get(analyticsCache, `aggregation:${type}:${period}`);
+  },
+
+  setAnalyticsAggregation: async (type, period, data, ttl = 30 * 60) => {
+    return set(analyticsCache, `aggregation:${type}:${period}`, data, ttl);
+  },
+
+  // Dashboard real-time updates
+  publishDashboardUpdate: async (updateType, data) => {
+    try {
+      // This would integrate with WebSocket or Server-Sent Events
+      const update = {
+        type: updateType,
+        data,
+        timestamp: Date.now(),
+      };
+
+      await set(examCache, `update:${updateType}`, update, 60);
+      return true;
+    } catch (error) {
+      console.error("Error publishing dashboard update:", error);
+      return false;
+    }
+  },
+
+  // Get dashboard notifications
+  getDashboardNotifications: async (userId) => {
+    return get(examCache, `notifications:${userId}`);
+  },
+
+  setDashboardNotifications: async (userId, notifications, ttl = 60 * 60) => {
+    return set(examCache, `notifications:${userId}`, notifications, ttl);
+  },
+
+  // Performance monitoring cache
+  recordPerformanceMetric: async (metric, value) => {
+    try {
+      const timestamp = Date.now();
+      const key = `metrics:${metric}:${Math.floor(timestamp / 60000)}`; // Per minute
+
+      await examCache.lpush(key, JSON.stringify({ value, timestamp }));
+      await examCache.ltrim(key, 0, 99); // Keep last 100 entries
+      await examCache.expire(key, 3600); // 1 hour TTL
+
+      return true;
+    } catch (error) {
+      console.error("Error recording performance metric:", error);
+      return false;
+    }
+  },
+
+  getPerformanceMetrics: async (metric, minutes = 60) => {
+    try {
+      const now = Math.floor(Date.now() / 60000);
+      const keys = [];
+
+      for (let i = 0; i < minutes; i++) {
+        keys.push(`metrics:${metric}:${now - i}`);
+      }
+
+      const pipeline = examCache.pipeline();
+      keys.forEach((key) => pipeline.lrange(key, 0, -1));
+
+      const results = await pipeline.exec();
+      const metrics = [];
+
+      results.forEach(([err, data]) => {
+        if (!err && data) {
+          data.forEach((item) => {
+            try {
+              metrics.push(JSON.parse(item));
+            } catch (e) {
+              // Skip invalid entries
+            }
+          });
+        }
+      });
+
+      return metrics.sort((a, b) => a.timestamp - b.timestamp);
+    } catch (error) {
+      console.error("Error getting performance metrics:", error);
+      return [];
+    }
+  },
+
+  // Dashboard update triggers
+  triggerDashboardRefresh: async (sections = ["all"]) => {
+    try {
+      if (sections.includes("all")) {
+        await dashboardService.clearDashboardCache();
+      } else {
+        for (const section of sections) {
+          await dashboardService.invalidateDashboardSection(section);
+        }
+      }
+
+      // Publish update notification
+      await dashboardService.publishDashboardUpdate("refresh", {
+        sections,
+        timestamp: Date.now(),
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Error triggering dashboard refresh:", error);
+      return false;
+    }
+  },
+
+  // Advanced caching strategies
+  warmDashboardCache: async () => {
+    try {
+      // Pre-warm critical dashboard data
+      const warmupTasks = [
+        // Warm up stats
+        set(examCache, "warmup:stats", "warming", 300),
+        // Warm up recent activity
+        set(examCache, "warmup:activity", "warming", 300),
+        // Warm up performance data
+        set(examCache, "warmup:performance", "warming", 300),
+      ];
+
+      await Promise.allSettled(warmupTasks);
+      console.log("Dashboard cache warmup initiated");
+      return true;
+    } catch (error) {
+      console.error("Error warming dashboard cache:", error);
+      return false;
+    }
+  },
+};
+
 /**
  * Add item to batch processing queue
  */
@@ -1478,4 +1800,5 @@ export {
   publicationService,
   publicationCache,
   queueExamSubmission,
+  dashboardService,
 };
