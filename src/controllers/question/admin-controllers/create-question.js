@@ -13,14 +13,17 @@ const createQuestion = catchAsync(async (req, res, next) => {
     questionText,
     type,
     difficultyLevel: difficulty,
-    category,
+    subject, // Changed from 'category' to match model
     marks,
     hasNegativeMarking = false,
     negativeMarks = 0,
     options,
     statements,
-    statementInstruction, // Singular form to match model
+    statementInstruction,
     explanation,
+    correctAnswer, // Added missing field
+    image, // Added missing field
+    questionCode, // Added missing field
   } = req.body;
 
   // Validate required fields
@@ -119,18 +122,21 @@ const createQuestion = catchAsync(async (req, res, next) => {
     return next(new AppError("User not found", 404));
   }
 
-  // Prepare question data
+  // Prepare question data - matching model fields exactly
   const questionData = {
     examId,
     questionText,
     type,
     difficultyLevel: difficulty || "MEDIUM",
-    category: category || "",
+    subject: subject || "", // Changed from 'category' to 'subject'
     marks: parseInt(marks || 1, 10),
     hasNegativeMarking: hasNegativeMarking === "Yes" ? true : false,
     negativeMarks: parseFloat(negativeMarks),
     options: options || [],
     explanation: explanation || "",
+    correctAnswer: correctAnswer || "", // Added missing field
+    image: image || "", // Added missing field
+    questionCode: questionCode || "", // Added missing field
     isActive: true,
     createdBy: userId,
   };
@@ -145,15 +151,18 @@ const createQuestion = catchAsync(async (req, res, next) => {
     // Create the question
     const newQuestion = await Question.create(questionData);
 
-    // Cache the new question
+    // 1. Cache the new question
     await questionService.setQuestion(
       newQuestion._id.toString(),
       newQuestion.toJSON(),
       3600
     );
 
-    // Invalidate questions by exam cache for this examId
+    // 2. Invalidate questions by exam cache for this examId
     await questionService.clearExamQuestionsCache(examId);
+
+    // 3. Clear dashboard pagination caches (new question affects listings)
+    await questionService.clearDashboardCache();
 
     // Update the question count for this exam
     try {

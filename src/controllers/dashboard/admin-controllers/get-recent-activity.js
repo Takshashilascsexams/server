@@ -5,6 +5,7 @@ import ExamAttempt from "../../../models/examAttempt.models.js";
 import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { dashboardService } from "../../../services/redisService.js";
 import { formatDashboardDate } from "../../../lib/formatDashboardDates.js";
+import { Types } from "mongoose";
 
 /**
  * Controller to get recent activity for dashboard
@@ -203,7 +204,9 @@ const getRecentQuestionActivity = async (limit) => {
     ]);
 
     return recentQuestions.map((group) => ({
-      id: `${group._id.examId}-${group._id.date}`,
+      id: `question_${group._id.examId}_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`,
       type: "question",
       title: "MCQ Questions Added",
       description: `${group.count} questions added to "${
@@ -291,7 +294,9 @@ const getRecentResultActivity = async (limit) => {
     ]);
 
     return recentResults.map((result) => ({
-      id: `${result._id.examId}-${result._id.date}`,
+      id: `result_${result._id.examId}_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`,
       type: "result",
       title: "Exam Results Published",
       description: `${result.examTitle} results: ${

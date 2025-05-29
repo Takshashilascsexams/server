@@ -1,7 +1,7 @@
 import Question from "../../../models/questions.models.js";
 import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { questionService } from "../../../services/redisService.js";
-import { questionTypes } from "../../../utils/arrays.js";
+import { questionTypes, difficultyLevel } from "../../../utils/arrays.js";
 
 /**
  * Update an existing question
@@ -17,14 +17,18 @@ const updateQuestion = catchAsync(async (req, res, next) => {
   const {
     questionText,
     type,
-    difficulty,
-    category,
+    difficultyLevel: difficulty, // Fixed field name consistency
+    subject, // Changed from 'category' to match model
     marks,
+    hasNegativeMarking, // Added missing field
     negativeMarks,
     options,
     statements,
-    statementInstruction, // Singular form to match model
+    statementInstruction,
     explanation,
+    correctAnswer, // Added missing field
+    image, // Added missing field
+    questionCode, // Added missing field
   } = req.body;
 
   // Basic validation
@@ -36,6 +40,16 @@ const updateQuestion = catchAsync(async (req, res, next) => {
     return next(
       new AppError(
         `Question type must be one of: ${questionTypes.join(", ")}`,
+        400
+      )
+    );
+  }
+
+  // Validate difficulty level if provided
+  if (difficulty && !difficultyLevel.includes(difficulty)) {
+    return next(
+      new AppError(
+        `Difficulty level must be one of: ${difficultyLevel.join(", ")}`,
         400
       )
     );
@@ -96,16 +110,20 @@ const updateQuestion = catchAsync(async (req, res, next) => {
     );
   }
 
-  // Transform form values to API expected format
+  // Transform form values to API expected format - matching model fields exactly
   const questionData = {
     questionText,
     type,
     difficultyLevel: difficulty || "MEDIUM",
-    category: category || "",
+    subject: subject || "", // Changed from 'category' to 'subject'
     marks: parseInt(marks || 1, 10),
+    hasNegativeMarking: hasNegativeMarking === "Yes" ? true : false, // Added missing field
     negativeMarks: parseFloat(negativeMarks || 0),
     options: options || [],
     explanation: explanation || "",
+    correctAnswer: correctAnswer || "", // Added missing field
+    image: image || "", // Added missing field
+    questionCode: questionCode || "", // Added missing field
   };
 
   // Add statement-specific fields if needed

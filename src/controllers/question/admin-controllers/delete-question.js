@@ -25,13 +25,13 @@ const deleteQuestion = catchAsync(async (req, res, next) => {
   // Delete the question
   await Question.findByIdAndDelete(questionId);
 
-  // Delete from question cache
+  // 1. Delete from question cache
   await questionService.deleteQuestion(questionId);
 
-  // Invalidate questions by exam cache
-  await questionService.deleteQuestionsByExam(examId);
+  // 2. Clear exam-specific question caches
+  await questionService.clearExamQuestionsCache(examId);
 
-  // Invalidate dashboard question cache
+  // 3. Invalidate dashboard question cache
   await questionService.clearDashboardCache();
 
   // Update the question count for this exam
