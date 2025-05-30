@@ -21,6 +21,8 @@ import getAdminRankings from "../controllers/exam-attempt/admin-controllers/get-
 import getStudentDetailedResult from "../controllers/exam-attempt/admin-controllers/get-student-detailed-result.js";
 import getExamResults from "../controllers/exam-attempt/admin-controllers/get-exam-results.js";
 import recalculateExamAttempt from "../controllers/exam-attempt/admin-controllers/recalculate-exam-attempt.js";
+import changeAttemptStatus from "../controllers/exam-attempt/admin-controllers/change-attempt-status.js";
+import deleteExamAttempt from "../controllers/exam-attempt/admin-controllers/delete-exam-attempt.js";
 
 import {
   verifyUserIsSignedIn,
@@ -104,5 +106,11 @@ router.patch(
   apiLimiter,
   recalculateExamAttempt
 );
+router.patch(
+  "/admin-change-status/:attemptId",
+  apiLimiter,
+  changeAttemptStatus
+);
+router.delete("/admin-delete/:attemptId", apiLimiter, deleteExamAttempt);
 
 export default router;

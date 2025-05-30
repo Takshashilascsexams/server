@@ -1,9 +1,9 @@
+import mongoose from "mongoose";
 import ExamAttempt from "../../../models/examAttempt.models.js";
 import Exam from "../../../models/exam.models.js";
 import User from "../../../models/user.models.js";
 import { catchAsync, AppError } from "../../../utils/errorHandler.js";
 import { examService } from "../../../services/redisService.js";
-import mongoose from "mongoose";
 
 /**
  * Helper function to format result data consistently
