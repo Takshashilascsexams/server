@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Exam from "../../../models/exam.models.js";
 import ExamAttempt from "../../../models/examAttempt.models.js";
 import ExamAnalytics from "../../../models/examAnalytics.models.js";
@@ -6,7 +7,6 @@ import {
   examService,
   analyticsService,
 } from "../../../services/redisService.js";
-import mongoose from "mongoose";
 
 const getExamDashboard = catchAsync(async (req, res, next) => {
   // Pagination

@@ -4,7 +4,7 @@ import { examService } from "../../../services/redisService.js";
 
 /**
  * Update an existing exam
- * Handles all the fields shown in the EditExamForm component with proper validation
+ * Synced with createExam controller for consistent validation and data transformation
  */
 const updateExam = catchAsync(async (req, res, next) => {
   const { id: examId } = req.params;
@@ -33,95 +33,102 @@ const updateExam = catchAsync(async (req, res, next) => {
     allowNavigation,
     allowMultipleAttempts,
     maxAttempt,
-    isFeatured,
     isPremium,
     price,
     discountPrice,
     accessPeriod,
+    isFeatured,
     isPartOfBundle,
     bundleTag,
-    isActive,
+    isActive, // Update-specific field
   } = req.body;
 
-  // Validate required fields - use existing values as fallback
-  const requiredFields = [
-    { value: title, name: "title", fallback: existingExam.title },
-    {
-      value: description,
-      name: "description",
-      fallback: existingExam.description,
-    },
-    { value: duration, name: "duration", fallback: existingExam.duration },
-    {
-      value: totalQuestions,
-      name: "totalQuestions",
-      fallback: existingExam.totalQuestions,
-    },
-    {
-      value: totalMarks,
-      name: "totalMarks",
-      fallback: existingExam.totalMarks,
-    },
-    {
-      value: hasNegativeMarking,
-      name: "hasNegativeMarking",
-      fallback: existingExam.hasNegativeMarking,
-    },
-    {
-      value: negativeMarkingValue,
-      name: "negativeMarkingValue",
-      fallback: existingExam.negativeMarkingValue,
-    },
-    {
-      value: passMarkPercentage,
-      name: "passMarkPercentage",
-      fallback: existingExam.passMarkPercentage,
-    },
-    {
-      value: difficultyLevel,
-      name: "difficultyLevel",
-      fallback: existingExam.difficultyLevel,
-    },
-    { value: category, name: "category", fallback: existingExam.category },
-    {
-      value: allowNavigation,
-      name: "allowNavigation",
-      fallback: existingExam.allowNavigation,
-    },
-    {
-      value: allowMultipleAttempts,
-      name: "allowMultipleAttempts",
-      fallback: existingExam.allowMultipleAttempts,
-    },
-    {
-      value: maxAttempt,
-      name: "maxAttempt",
-      fallback: existingExam.maxAttempt,
-    },
-    { value: isPremium, name: "isPremium", fallback: existingExam.isPremium },
-    { value: price, name: "price", fallback: existingExam.price },
-    {
-      value: discountPrice,
-      name: "discountPrice",
-      fallback: existingExam.discountPrice,
-    },
-    {
-      value: accessPeriod,
-      name: "accessPeriod",
-      fallback: existingExam.accessPeriod,
-    },
-    {
-      value: isFeatured,
-      name: "isFeatured",
-      fallback: existingExam.isFeatured,
-    },
+  // Use provided values or fallback to existing values
+  const finalTitle = title !== undefined ? title : existingExam.title;
+  const finalDescription =
+    description !== undefined ? description : existingExam.description;
+  const finalDuration =
+    duration !== undefined ? duration : existingExam.duration;
+  const finalTotalQuestions =
+    totalQuestions !== undefined ? totalQuestions : existingExam.totalQuestions;
+  const finalTotalMarks =
+    totalMarks !== undefined ? totalMarks : existingExam.totalMarks;
+  const finalHasNegativeMarking =
+    hasNegativeMarking !== undefined
+      ? hasNegativeMarking
+      : existingExam.hasNegativeMarking;
+  const finalNegativeMarkingValue =
+    negativeMarkingValue !== undefined
+      ? negativeMarkingValue
+      : existingExam.negativeMarkingValue;
+  const finalPassMarkPercentage =
+    passMarkPercentage !== undefined
+      ? passMarkPercentage
+      : existingExam.passMarkPercentage;
+  const finalDifficultyLevel =
+    difficultyLevel !== undefined
+      ? difficultyLevel
+      : existingExam.difficultyLevel;
+  const finalCategory =
+    category !== undefined ? category : existingExam.category;
+  const finalAllowNavigation =
+    allowNavigation !== undefined
+      ? allowNavigation
+      : existingExam.allowNavigation;
+  const finalAllowMultipleAttempts =
+    allowMultipleAttempts !== undefined
+      ? allowMultipleAttempts
+      : existingExam.allowMultipleAttempts;
+  const finalMaxAttempt =
+    maxAttempt !== undefined ? maxAttempt : existingExam.maxAttempt;
+  const finalIsPremium =
+    isPremium !== undefined ? isPremium : existingExam.isPremium;
+  const finalPrice = price !== undefined ? price : existingExam.price;
+  const finalDiscountPrice =
+    discountPrice !== undefined ? discountPrice : existingExam.discountPrice;
+  const finalAccessPeriod =
+    accessPeriod !== undefined ? accessPeriod : existingExam.accessPeriod;
+  const finalIsFeatured =
+    isFeatured !== undefined ? isFeatured : existingExam.isFeatured;
+  const finalIsPartOfBundle =
+    isPartOfBundle !== undefined
+      ? isPartOfBundle
+      : existingExam.bundleTags &&
+        existingExam.bundleTags.length > 0 &&
+        existingExam.bundleTags[0] !== "";
+  const finalBundleTag =
+    bundleTag !== undefined
+      ? bundleTag
+      : existingExam.bundleTags && existingExam.bundleTags.length > 0
+      ? existingExam.bundleTags[0]
+      : "";
+  const finalIsActive =
+    isActive !== undefined ? isActive : existingExam.isActive;
+
+  // Validate required fields are not null/undefined if provided
+  const fieldsToValidate = [
+    { value: finalTitle, name: "title" },
+    { value: finalDescription, name: "description" },
+    { value: finalDuration, name: "duration" },
+    { value: finalTotalQuestions, name: "totalQuestions" },
+    { value: finalTotalMarks, name: "totalMarks" },
+    { value: finalHasNegativeMarking, name: "hasNegativeMarking" },
+    { value: finalNegativeMarkingValue, name: "negativeMarkingValue" },
+    { value: finalPassMarkPercentage, name: "passMarkPercentage" },
+    { value: finalDifficultyLevel, name: "difficultyLevel" },
+    { value: finalCategory, name: "category" },
+    { value: finalAllowNavigation, name: "allowNavigation" },
+    { value: finalAllowMultipleAttempts, name: "allowMultipleAttempts" },
+    { value: finalMaxAttempt, name: "maxAttempt" },
+    { value: finalIsPremium, name: "isPremium" },
+    { value: finalPrice, name: "price" },
+    { value: finalDiscountPrice, name: "discountPrice" },
+    { value: finalAccessPeriod, name: "accessPeriod" },
+    { value: finalIsFeatured, name: "isFeatured" },
   ];
 
-  // Check if any required field is null or undefined (only if provided in request)
-  const missingFields = requiredFields.filter(
-    (field) =>
-      field.value !== undefined &&
-      (field.value === null || field.value === undefined)
+  const missingFields = fieldsToValidate.filter(
+    (field) => field.value === null || field.value === undefined
   );
 
   if (missingFields.length > 0) {
@@ -134,40 +141,12 @@ const updateExam = catchAsync(async (req, res, next) => {
     );
   }
 
-  // Use provided values or fallback to existing values for validation
-  const finalMaxAttempt =
-    maxAttempt !== undefined ? maxAttempt : existingExam.maxAttempt;
-  const finalAllowMultipleAttempts =
-    allowMultipleAttempts !== undefined
-      ? allowMultipleAttempts
-      : existingExam.allowMultipleAttempts;
-  const finalIsPremium =
-    isPremium !== undefined ? isPremium : existingExam.isPremium;
-  const finalPrice = price !== undefined ? price : existingExam.price;
-  const finalDiscountPrice =
-    discountPrice !== undefined ? discountPrice : existingExam.discountPrice;
-  // Handle form data transformation - the form sends different structure
-  // The form sends: isPartOfBundle (boolean) and bundleTag (string)
-  // But the controller logic expects these to be processed differently
-  const processedIsPartOfBundle =
-    isPartOfBundle !== undefined
-      ? isPartOfBundle
-      : existingExam.bundleTags &&
-        existingExam.bundleTags.length > 0 &&
-        existingExam.bundleTags[0] !== "";
-  const processedBundleTag =
-    bundleTag !== undefined
-      ? bundleTag
-      : existingExam.bundleTags && existingExam.bundleTags.length > 0
-      ? existingExam.bundleTags[0]
-      : "";
-
-  // Validate attempt-related fields
+  // Validate attempt-related fields (same logic as createExam)
   const parsedMaxAttempt = parseInt(finalMaxAttempt);
   const isMultipleAttemptsAllowed =
     finalAllowMultipleAttempts === "Yes" || finalAllowMultipleAttempts === true;
 
-  if (isNaN(parsedMaxAttempt) || parsedMaxAttempt < 1 || parsedMaxAttempt > 2) {
+  if (parsedMaxAttempt < 1 || parsedMaxAttempt > 2) {
     return next(
       new AppError(
         "Minimum attempt should be 1 and maximum attempt should be 2",
@@ -194,15 +173,14 @@ const updateExam = catchAsync(async (req, res, next) => {
     );
   }
 
-  // Validate premium exam has correct price
-  const isPremiumFinal = finalIsPremium === "Yes" || finalIsPremium === true;
-  if (isPremiumFinal && (!finalPrice || parseFloat(finalPrice) <= 0)) {
+  // Validate premium exam has correct price (same logic as createExam)
+  if (finalIsPremium === true && (!finalPrice || parseFloat(finalPrice) <= 0)) {
     return next(
       new AppError("Premium exams must have a price greater than 0", 400)
     );
   }
 
-  // Validate discount price is less than regular price
+  // Validate discount price is less than regular price (same logic as createExam)
   if (
     finalDiscountPrice &&
     parseFloat(finalDiscountPrice) >= parseFloat(finalPrice)
@@ -212,82 +190,33 @@ const updateExam = catchAsync(async (req, res, next) => {
     );
   }
 
-  // Validate bundle requirements
-  if (processedIsPartOfBundle && !processedBundleTag) {
+  // Validate bundle requirements (simplified to match createExam)
+  if (finalIsPartOfBundle && !finalBundleTag) {
     return next(new AppError("A bundle tag is required for bundle exams", 400));
   }
 
-  // Validate bundle tag is from allowed list (if you have a predefined list)
-  // You can add this validation if you have a bundleTagName array in your backend
-  // const validBundleTags = ["NEET", "JEE", "UPSC"]; // Example
-  // if (processedIsPartOfBundle && processedBundleTag && !validBundleTags.includes(processedBundleTag)) {
-  //   return next(new AppError("Invalid bundle tag selected", 400));
-  // }
-
-  // Transform form values to API expected format
+  // Transform form values to API expected format (same as createExam)
   const examData = {
-    title: title !== undefined ? title : existingExam.title,
-    description:
-      description !== undefined ? description : existingExam.description,
-    duration:
-      duration !== undefined ? parseInt(duration) : existingExam.duration,
-    totalQuestions:
-      totalQuestions !== undefined
-        ? parseInt(totalQuestions)
-        : existingExam.totalQuestions,
-    totalMarks:
-      totalMarks !== undefined ? parseInt(totalMarks) : existingExam.totalMarks,
-    hasNegativeMarking:
-      hasNegativeMarking !== undefined
-        ? hasNegativeMarking === "Yes" || hasNegativeMarking === true
-        : existingExam.hasNegativeMarking,
-    negativeMarkingValue:
-      negativeMarkingValue !== undefined
-        ? parseInt(negativeMarkingValue)
-        : existingExam.negativeMarkingValue,
-    passMarkPercentage:
-      passMarkPercentage !== undefined
-        ? parseInt(passMarkPercentage)
-        : existingExam.passMarkPercentage,
-    difficultyLevel:
-      difficultyLevel !== undefined
-        ? difficultyLevel
-        : existingExam.difficultyLevel,
-    category: category !== undefined ? category : existingExam.category,
-    allowNavigation:
-      allowNavigation !== undefined
-        ? allowNavigation === "Yes" || allowNavigation === true
-        : existingExam.allowNavigation,
-    allowMultipleAttempts:
-      allowMultipleAttempts !== undefined
-        ? isMultipleAttemptsAllowed
-        : existingExam.allowMultipleAttempts,
-    maxAttempt:
-      maxAttempt !== undefined ? parsedMaxAttempt : existingExam.maxAttempt,
-    isFeatured:
-      isFeatured !== undefined
-        ? isFeatured === "Yes" || isFeatured === true
-        : existingExam.isFeatured,
-    isPremium:
-      isPremium !== undefined ? isPremiumFinal : existingExam.isPremium,
-    price: price !== undefined ? parseFloat(price) : existingExam.price,
-    discountPrice:
-      discountPrice !== undefined
-        ? discountPrice
-          ? parseFloat(discountPrice)
-          : 0
-        : existingExam.discountPrice,
-    accessPeriod:
-      accessPeriod !== undefined
-        ? accessPeriod
-          ? parseInt(accessPeriod)
-          : 0
-        : existingExam.accessPeriod,
-    bundleTags:
-      processedIsPartOfBundle && processedBundleTag && processedBundleTag.trim()
-        ? [processedBundleTag.trim()]
-        : [],
-    isActive: isActive !== undefined ? isActive : existingExam.isActive,
+    title: finalTitle,
+    description: finalDescription,
+    duration: parseInt(finalDuration),
+    totalQuestions: parseInt(finalTotalQuestions),
+    totalMarks: parseInt(finalTotalMarks),
+    hasNegativeMarking: finalHasNegativeMarking === "Yes" ? true : false,
+    negativeMarkingValue: parseFloat(finalNegativeMarkingValue),
+    passMarkPercentage: parseInt(finalPassMarkPercentage),
+    difficultyLevel: finalDifficultyLevel,
+    category: finalCategory,
+    allowNavigation: finalAllowNavigation === "Yes" ? true : false,
+    allowMultipleAttempts: isMultipleAttemptsAllowed,
+    maxAttempt: parsedMaxAttempt,
+    isPremium: finalIsPremium === "Yes" ? true : false,
+    price: finalPrice ? parseFloat(finalPrice) : 0,
+    discountPrice: finalDiscountPrice ? parseFloat(finalDiscountPrice) : 0,
+    accessPeriod: finalAccessPeriod,
+    isFeatured: finalIsFeatured === "Yes" ? true : false,
+    bundleTags: finalBundleTag ? [finalBundleTag] : [], // Simplified to match createExam
+    isActive: finalIsActive, // Update-specific field
   };
 
   // Update the exam
@@ -296,42 +225,48 @@ const updateExam = catchAsync(async (req, res, next) => {
     runValidators: true, // Run validators on update
   });
 
-  // Clear cache for this exam and related caches - COMPREHENSIVE CLEARING
+  // Comprehensive cache clearing for all affected controllers (same as createExam)
   try {
     await Promise.allSettled([
-      // 1. Clear getCategorizedExams cache - examService.getUserSpecificExamsCache(cacheKey)
-      // Pattern: categorized:shardId:userId (where cacheKey = `categorized:${userId}`)
-      examService.clearCategorizedExamsCache(), // Clears categorized:*:* across all 16 shards
-
-      // 2. Clear getLatestPublishedExams cache - examService.getCache(cacheKey)
-      // Pattern: latest:published:${clerkId}:${LIMIT}
-      examService.clearPattern(examService.examCache, "latest:published:*"),
-
-      // 3. Clear getExamDashboard cache - examService.get(examService.examCache, cacheKey)
-      // Pattern: admin:dashboard:exams:${JSON.stringify({page, limit, sort, filterOptions})}
+      // 1. Clear getExamDashboard cache - admin dashboard cache
       examService.clearPattern(
         examService.examCache,
         "admin:dashboard:exams:*"
       ),
 
-      // 4. Clear getBundleDetails cache - examService.getBundleCache(bundleId, userIdString)
-      // Pattern: bundle:shardId:bundleId:userId across 8 shards
-      examService.clearAllBundleCache(),
-
-      // 5. Clear getExamById cache - examService.get(examService.examCache, cacheKey)
-      // Pattern: admin:exam:${examId}
+      // 2. Clear getExamById cache - individual exam cache for editing
       examService.clearPattern(examService.examCache, "admin:exam:*"),
 
-      // 6. Clear getExamDetails cache - examService.get(examService.examCache, cacheKey)
-      // Pattern: admin:exam:details:${examId}
+      // 3. Clear getExamDetails cache - detailed exam analytics cache
       examService.clearPattern(examService.examCache, "admin:exam:details:*"),
 
-      // 7. Clear specific exam cache for the updated exam
-      examService.deleteExam(examId),
+      // 4. Clear getCategorizedExams cache - user-specific categorized exams
+      examService.clearCategorizedExamsCache(), // This clears categorized:*:* pattern for all 16 shards
 
-      // 8. Clear any additional general cache patterns that might be affected
-      examService.clearPattern(examService.examCache, "latest:*"), // For any other latest patterns
-      examService.clearPattern(examService.examCache, "exam:*"), // Individual exam cache
+      // Additional clear for any direct categorized cache keys
+      examService.clearPattern(examService.examCache, "categorized:*"), // Clear all categorized cache patterns
+
+      // 5. Clear getLatestPublishedExams cache - latest exams for users
+      examService.clearLatestExamsCache(), // This clears latest:* pattern
+
+      // 6. Clear getBundleDetails cache - bundle-specific cache for all users
+      examService.clearAllBundleCache(), // This clears bundle:*:*:* pattern
+
+      // 7. Clear additional patterns used by getCategorizedExams
+      examService.clearPattern(examService.examCache, "categorized:*"), // Clear all sharded user-specific cache
+
+      // 8. Clear general exam cache patterns
+      examService.clearPattern(examService.examCache, "exam:*"),
+      examService.clearPattern(examService.examCache, "latest:*"),
+
+      // 9. Clear user-specific exam access cache (since updated exam affects access)
+      examService.clearPattern(examService.examCache, "access:*"),
+
+      // 10. Clear any remaining cache patterns that might be used
+      examService.clearPattern(examService.examCache, "latest:published:*"), // getLatestPublishedExams specific pattern
+
+      // 11. Clear specific exam cache for the updated exam
+      examService.deleteExam(examId),
     ]);
   } catch (cacheError) {
     console.error("Failed to clear comprehensive exam cache:", cacheError);
