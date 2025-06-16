@@ -8,7 +8,6 @@ import storage from "../../../utils/multerConfig.js";
 import { checkExamExists, getUserId } from "../../../utils/cachedDbQueries.js";
 import {
   questionService,
-  examService,
 } from "../../../services/redisService.js";
 
 // Configure file filter - only allow JSON files
@@ -81,6 +80,8 @@ const processJsonDocument = async (filePath) => {
         options: options,
         correctAnswer: question.correctAnswer,
         type: type,
+        explanation: question.explanation || "",
+        subject: question.subject || "",
         explanation: question.explanation || "",
       };
 
@@ -236,7 +237,7 @@ const uploadBulkQuestions = catchAsync(async (req, res, next) => {
         options: processedOptions,
         correctAnswer: correctAnswerText,
         difficultyLevel,
-        subject,
+        subject: q.subject || subject,
         hasNegativeMarking: hasNegativeMarking === "Yes" ? true : false,
         negativeMarks: parseFloat(negativeMarks),
         explanation: q.explanation || "",
@@ -326,6 +327,8 @@ const validateBulkQuestions = catchAsync(async (req, res, next) => {
         statementInstruction: q.statementInstruction || "",
         options: q.options,
         correctAnswer: q.correctAnswer,
+        subject: q.subject || "",
+        explanation: q.explanation || "",
       })),
     },
   });
