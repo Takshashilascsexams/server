@@ -109,6 +109,7 @@ const questionSchema = new mongoose.Schema(
     },
     subject: {
       type: String,
+      required: [true, "Subject is required"],
       trim: true,
       index: true, // Index for filtering by topic
     },
